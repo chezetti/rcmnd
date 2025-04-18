@@ -1,0 +1,334 @@
+@import "tailwindcss";
+
+:root {
+  --max-width: 1400px;
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #f9f9f9;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #7857FF;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #7857FF;
+  --radius: 0.5rem;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d0d11;
+    --foreground: #f3f4f6;
+    --card: #1a1a23;
+    --card-foreground: #f3f4f6;
+    --popover: #1a1a23;
+    --popover-foreground: #f3f4f6;
+    --primary: #7857FF;
+    --primary-foreground: #ffffff;
+    --secondary: #27272e;
+    --secondary-foreground: #f3f4f6;
+    --muted: #27272e;
+    --muted-foreground: #a1a1aa;
+    --accent: #27272e;
+    --accent-foreground: #f3f4f6;
+    --destructive: #f87171;
+    --destructive-foreground: #ffffff;
+    --border: #333340;
+    --input: #333340;
+    --ring: #7857FF;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+  background-image: radial-gradient(
+    circle at center,
+    rgba(25, 25, 35, 0.8) 0%,
+    rgba(13, 13, 17, 1) 70%
+  );
+  background-attachment: fixed;
+  overflow-x: hidden; /* Предотвращаем горизонтальный скролл на мобильных */
+}
+
+/* Main layout styling */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Адаптивность основных контейнеров */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  main {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  h1 {
+    font-size: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Pinterest-like masonry layout */
+.masonry-grid {
+  display: flex;
+  margin-left: -24px;
+  width: auto;
+}
+
+.masonry-grid-column {
+  padding-left: 24px;
+  background-clip: padding-box;
+}
+
+.masonry-item {
+  margin-bottom: 24px; /* Increased spacing between items */
+}
+
+/* Улучшенная адаптивность для masonry на мобильных устройствах */
+@media (max-width: 640px) {
+  .masonry-grid {
+    margin-left: -12px;
+  }
+  
+  .masonry-grid-column {
+    padding-left: 12px;
+  }
+  
+  .masonry-item {
+    margin-bottom: 12px;
+  }
+}
+
+/* Card styling - Rarible style */
+.card {
+  border-radius: 1rem !important;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border-color: rgba(120, 87, 255, 0.3);
+}
+
+/* Latest Drops section styling (like Rarible) */
+.latest-drops {
+  border-radius: 1.5rem;
+  background-color: rgba(20, 20, 28, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  margin-bottom: 3rem;
+}
+
+.latest-drops h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+/* Адаптивность для Latest Drops на мобильных */
+@media (max-width: 640px) {
+  .latest-drops {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 1rem;
+  }
+  
+  .latest-drops h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Button styles like Rarible */
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
+/* Адаптивность контента на мобильных устройствах */
+@media (max-width: 640px) {
+  /* Уменьшаем отступы */
+  .p-6 {
+    padding: 1rem !important;
+  }
+  
+  /* Уменьшаем размер карточек */
+  .card {
+    border-radius: 0.75rem !important;
+  }
+  
+  /* Уменьшаем отступы между карточками */
+  .gap-6, .gap-8 {
+    gap: 0.75rem !important;
+  }
+  
+  /* Уменьшаем элементы интерфейса */
+  .text-4xl {
+    font-size: 1.75rem !important;
+  }
+  
+  .text-2xl {
+    font-size: 1.5rem !important;
+  }
+  
+  .text-xl {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Улучшаем удобство кликов */
+  button, .btn {
+    min-height: 2.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Improve mobile experience */
+@media (max-width: 640px) {
+  .grid-cols-1 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Улучшение grid-сеток */
+  .grid {
+    row-gap: 0.75rem !important;
+  }
+}
+
+/* Улучшаем внешний вид контейнеров на мобильных устройствах */
+@media (max-width: 768px) {
+  .md\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .md\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Исправление размеров и отступов для мобильных экранов */
+  .mb-10 {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .mb-8 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .py-10 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  /* Исправление боковых отступов для контейнера */
+  .container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 375px) {
+  .container {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .text-sm {
+    font-size: 0.75rem !important;
+  }
+  
+  .grid {
+    row-gap: 0.5rem !important;
+  }
+}
+
+/* Filter components styling */
+.border {
+  border-color: var(--border) !important;
+}
+
+.bg-card, 
+div[class*="SelectContent"] {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+div[class*="SelectTrigger"] {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+}
+
+/* Небольшой зазор снизу для удобства скроллинга */
+main {
+  padding-bottom: 3rem;
+}
+
+/* Стили для footer чтобы он не прилипал к контенту */
+footer {
+  margin-top: 2rem;
+  padding: 1.5rem 0;
+}
+
+/* Адаптивный футер */
+@media (max-width: 640px) {
+  footer {
+    margin-top: 1rem;
+    padding: 1rem 0;
+  }
+}
+
+/* Стили для кнопок табов */
+.tabs-list button[data-state="active"] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Стили для кнопок и элементов в стиле Rarible */
+button, .btn, .tab {
+  border-radius: 0.75rem !important;
+  font-weight: 600;
+}
+
+/* Rarible-стиль заголовков */
+h1, h2, h3 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}

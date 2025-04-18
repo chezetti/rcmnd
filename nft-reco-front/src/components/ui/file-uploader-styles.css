@@ -1,0 +1,538 @@
+/* Стили для контейнера загрузчика файлов */
+.file-uploader-container {
+  position: relative;
+  padding: 2px; /* Толщина градиентной рамки */
+  border-radius: 12px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Градиентная рамка */
+.file-uploader-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.file-uploader-container:hover::before {
+  opacity: 1;
+}
+
+.gradient-border {
+  position: relative;
+  background-color: var(--background);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Пользовательские стили для Dashboard от Uppy */
+:root {
+  --uppy-color-primary: #8b5cf6; /* Фиолетовый для соответствия градиенту */
+  --uppy-color-focus: #3b82f6;
+  --uppy-color-secondary: #374151;
+}
+
+/* Оставляем только стили, специфичные для Uppy Dashboard и удаляем стили общего фона */
+
+/* Общие стили для всех элементов Dashboard */
+.uppy-Dashboard {
+  background-color: transparent !important;
+}
+
+/* Принудительно устанавливаем прозрачный фон для всех дочерних элементов */
+.uppy-Dashboard * {
+  background-color: transparent;
+}
+
+/* Основные контейнеры */
+.uppy-Dashboard-inner {
+  border: none !important;
+  background-color: rgba(30, 41, 59, 0.2) !important;
+  box-shadow: none !important;
+}
+
+.uppy-Dashboard-innerWrap {
+  background-color: rgba(30, 41, 59, 0.2) !important;
+}
+
+/* Стили для области перетаскивания */
+.uppy-Dashboard-AddFiles {
+  background: rgba(56, 65, 84, 0.3) !important;
+  border: 1px dashed rgba(139, 92, 246, 0.6) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Активная область перетаскивания */
+.uppy-Dashboard-AddFiles.uppy-is-drag-over {
+  background: rgba(139, 92, 246, 0.15) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Текстовые элементы */
+.uppy-Dashboard-dropFilesTitle {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.uppy-Dashboard-AddFiles-title {
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.uppy-Dashboard-note {
+  font-size: 0.85rem !important;
+  color: rgba(107, 114, 128, 0.8) !important;
+}
+
+/* Стили для кнопки browse files */
+.uppy-Dashboard-browse {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  transition: color 0.2s ease;
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  -webkit-text-fill-color: white !important;
+  font-size: 1.05rem !important;
+}
+
+.uppy-Dashboard-browse:hover {
+  opacity: 0.9;
+  background: linear-gradient(to right, #4d93ff, #9d6cff);
+}
+
+/* Контент Dashboard */
+.uppy-DashboardContent {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+.uppy-DashboardContent-bar {
+  background-color: rgba(30, 41, 59, 0.4) !important;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+
+.uppy-DashboardContent-panel {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+.uppy-DashboardContent-panelBody {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+/* Список файлов */
+.uppy-Dashboard-files {
+  background-color: transparent !important;
+  padding: 10px !important;
+}
+
+/* Блок со списком файлов */
+.uppy-Dashboard-progressindicators {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+/* Элементы файлов */
+.uppy-Dashboard-Item {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.uppy-Dashboard-Item:hover {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+.uppy-Dashboard-Item-preview {
+  background-color: rgba(30, 41, 59, 0.2) !important;
+}
+
+.uppy-Dashboard-Item-previewInnerWrap {
+  background-color: rgba(15, 23, 42, 0.3) !important;
+  border-radius: 4px !important;
+}
+
+.uppy-Dashboard-Item-previewInnerWrap::after {
+  background-color: transparent !important;
+}
+
+.uppy-Dashboard-Item-fileInfoAndButtons {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+/* Текстовые элементы файла */
+.uppy-Dashboard-Item-name {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.uppy-Dashboard-Item-status {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.uppy-Dashboard-Item-fileSize {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Интерактивные элементы */
+.uppy-DashboardContent-addMore {
+  color: white !important;
+  background-color: rgba(59, 130, 246, 0.7) !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  border: none !important;
+}
+
+.uppy-DashboardContent-addMore:hover {
+  background-color: rgba(59, 130, 246, 0.9) !important;
+}
+
+.uppy-Dashboard-Item-action--remove {
+  background-color: rgba(239, 68, 68, 0.9) !important; /* Ярко-красный фон */
+  color: white !important;
+  border-radius: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  top: -8px !important;
+  right: -8px !important;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3) !important;
+  border: 2px solid rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s ease !important;
+}
+
+.uppy-Dashboard-Item-action--remove:hover {
+  background-color: rgb(248, 113, 113) !important;
+  transform: scale(1.1) !important;
+}
+
+.uppy-Dashboard-Item-action--remove .uppy-c-icon {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.uppy-DashboardContent-title {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.uppy-DashboardContent-back {
+  color: rgba(139, 92, 246, 0.9) !important;
+}
+
+/* Статус бар */
+.uppy-StatusBar {
+  background-color: rgba(30, 41, 59, 0.2) !important;
+  box-shadow: none !important;
+  border-top: 1px solid rgba(139, 92, 246, 0.2) !important;
+  overflow: hidden !important;
+  padding: 10px !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+/* Стили для кнопок действий */
+.uppy-StatusBar-actionBtn--upload,
+button.uppy-StatusBar-actionBtn--upload {
+  background: linear-gradient(to right, #3b82f6, #8b5cf6) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  color: white !important;
+  padding: 10px 16px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;
+}
+
+button.uppy-StatusBar-actionBtn--upload:hover, 
+.uppy-StatusBar-actionBtn--upload:hover {
+  background: linear-gradient(to right, #4d93ff, #9d6cff) !important;
+  box-shadow: 0 6px 15px rgba(123, 58, 237, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.uppy-StatusBar-actionBtn--retry {
+  background-color: #3b82f6 !important;
+  border-radius: 6px !important;
+  color: white !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+}
+
+.uppy-StatusBar-actionBtn--retry:hover {
+  background-color: #2563eb !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5) !important;
+}
+
+/* Индикатор прогресса */
+.uppy-StatusBar-progress {
+  background: linear-gradient(to right, #3b82f6, #8b5cf6) !important;
+  height: 4px !important;
+}
+
+/* Иконки */
+.uppy-Dashboard-Item-previewIcon {
+  color: #8b5cf6 !important;
+}
+
+/* Иконка успешной загрузки */
+.uppy-Dashboard-Item-statusIcon--done {
+  color: #10b981 !important;
+}
+
+/* Добавляем стили для кнопки Cancel и её текста */
+.uppy-Dashboard-close span {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.uppy-Dashboard-close:hover span {
+  color: white !important;
+}
+
+/* Дополнительная защита от белого фона при выборе файла */
+.uppy-Dashboard-isAddFilesPanelVisible {
+  background-color: rgba(30, 41, 59, 0.2) !important;
+}
+
+/* Решаем проблему с белым фоном при загрузке */
+.uppy-Informer {
+  background-color: transparent !important;
+}
+
+.uppy-Informer p[role="alert"] {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  color: white !important;
+  border-radius: 4px !important;
+}
+
+/* Предотвращаем белый фон при перетаскивании */
+.uppy-Dashboard-dropFilesHereHint {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Устранение возможного белого фона в контейнере Uppy */
+.uppy-Root {
+  background-color: transparent !important;
+}
+
+/* Стилизация скроллбаров */
+/* Глобальные скроллбары для всего сайта */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgba(30, 41, 59, 0.2);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+  border-radius: 6px;
+  border: 2px solid rgba(15, 23, 42, 0.8);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #4d93ff, #9d6cff);
+}
+
+/* Скроллбары внутри Uppy Dashboard */
+.uppy-Dashboard-files::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.uppy-Dashboard-files::-webkit-scrollbar-track {
+  background-color: rgba(30, 41, 59, 0.3);
+  border-radius: 6px;
+}
+
+.uppy-Dashboard-files::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+  border-radius: 6px;
+  border: 2px solid rgba(15, 23, 42, 0.8);
+}
+
+.uppy-Dashboard-files::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #4d93ff, #9d6cff);
+}
+
+/* Убираем белую полосу внизу области загрузки */
+.uppy-Dashboard-inner .uppy-DashboardContent {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+.uppy-Dashboard-inner .uppy-DashboardContent * {
+  background-color: transparent !important;
+}
+
+.uppy-Dashboard-inner .uppy-StatusBar {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+/* Полностью убираем белый фон под кнопкой загрузки */
+.uppy-Dashboard-inner div:not([class]) {
+  background-color: transparent !important;
+}
+
+/* Улучшение стилизации скроллбара */
+.uppy-Dashboard-inner::-webkit-scrollbar,
+.uppy-Dashboard-files::-webkit-scrollbar,
+.uppy-Dashboard-progressindicators::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.uppy-Dashboard-inner::-webkit-scrollbar-track,
+.uppy-Dashboard-files::-webkit-scrollbar-track,
+.uppy-Dashboard-progressindicators::-webkit-scrollbar-track {
+  background-color: rgba(30, 41, 59, 0.2);
+  border-radius: 8px;
+}
+
+.uppy-Dashboard-inner::-webkit-scrollbar-thumb,
+.uppy-Dashboard-files::-webkit-scrollbar-thumb,
+.uppy-Dashboard-progressindicators::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+  border-radius: 8px;
+  border: 2px solid rgba(15, 23, 42, 0.8);
+}
+
+/* Создаем контейнер с темным фоном для области загрузки */
+.file-uploader-container .uppy-Dashboard {
+  position: relative;
+  z-index: 1;
+}
+
+.file-uploader-container .uppy-Dashboard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  z-index: -1;
+  border-radius: 8px;
+}
+
+/* Явная стилизация панели с кнопкой загрузки */
+.uppy-StatusBar {
+  background: rgba(15, 23, 42, 0.4) !important;
+  border-top: 1px solid rgba(139, 92, 246, 0.3) !important;
+  padding: 12px !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+/* Стилизация для кнопок типа "Edit" */
+.uppy-Dashboard-Item-action--edit {
+  background-color: rgba(59, 130, 246, 0.8) !important;
+  color: white !important;
+  border-radius: 50% !important;
+}
+
+.uppy-Dashboard-Item-action--edit:hover {
+  background-color: rgba(59, 130, 246, 1) !important;
+}
+
+/* Явное удаление белого фона под загрузкой */
+.uppy-DashboardContent-panel,
+.uppy-Dashboard-inner,
+.uppy-Dashboard-innerWrap,
+.uppy-Dashboard-body,
+.uppy-DashboardContent-bar,
+.uppy-DashboardContent,
+.uppy-Dashboard-files,
+.uppy-Dashboard-upload,
+.uppy-Dashboard-poweredBy,
+.uppy-Dashboard-Item,
+.uppy-Dashboard-dropFilesTitle,
+.uppy-Dashboard-note,
+.uppy-Dashboard,
+.uppy-DashboardTab,
+.uppy-DashboardItem,
+.uppy-StatusBar-statusSecondary,
+.uppy-StatusBar-statusPrimary,
+.uppy-DashboardContent-back,
+.uppy-DashboardContent-title,
+.uppy-Dashboard-Item-previewInfo,
+.uppy-Dashboard-Item-previewWrapper {
+  background-color: transparent !important;
+}
+
+/* Форсированное затемнение для всех внутренних элементов */
+.uppy-Dashboard * :not(svg, path) {
+  background-color: transparent !important;
+}
+
+/* Принудительный темный фон для белых областей */
+.uppy-StatusBar-content, 
+.uppy-StatusBar-actions,
+.uppy-StatusBar-status {
+  background-color: transparent !important;
+}
+
+/* Улучшение стиля крестика */
+.uppy-Dashboard-Item-action--remove {
+  background-color: rgb(239, 68, 68) !important; /* Чистый яркий красный */
+  color: white !important;
+  border-radius: 50% !important;
+  width: 26px !important;
+  height: 26px !important;
+  top: -10px !important;
+  right: -10px !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  z-index: 10 !important;
+}
+
+/* Улучшенный ховер для кнопки удаления */
+.uppy-Dashboard-Item-action--remove:hover {
+  background-color: rgb(248, 113, 113) !important;
+  transform: scale(1.15) !important;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.5) !important;
+}
+
+/* Стиль значка крестика */
+.uppy-Dashboard-Item-action--remove svg {
+  fill: white !important;
+  stroke: white !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Улучшение контраста для имени файла */
+.uppy-Dashboard-Item-name {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Улучшение контейнера для файла */
+.uppy-Dashboard-Item {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(139, 92, 246, 0.4) !important;
+  overflow: visible !important; /* Чтобы крестик мог выходить за границы */
+}
+
+/* Темный фон для области превью файла */
+.uppy-Dashboard-Item-previewInnerWrap::after {
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3) !important;
+} 

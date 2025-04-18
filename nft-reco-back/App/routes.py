@@ -318,14 +318,113 @@ async def explore_nfts(
     
     Возвращает список NFT с метаданными, отсортированный согласно параметрам.
     """
-    # Заглушка для реализации функции просмотра и исследования NFT
-    # В реальном приложении здесь бы была логика запросов к базе данных или индексу
-    return {
-        "results": [], 
-        "total": 0, 
-        "page": offset // limit + 1 if limit > 0 else 1,
-        "pages": 0
-    }
+    try:
+        print("DEBUG: Starting explore_nfts method")
+        
+        # Получаем статистику индекса для проверки
+        from .index import vector_store as vs
+        stats = vs.get_stats()
+        print(f"DEBUG: Vector store stats: {stats}")
+        
+        # Получаем все активные UUID и создаем результаты на основе get(uuid)
+        items = []
+        results = []
+        
+        print("DEBUG: Accessing index internal state")
+        # Пытаемся получить все UUID напрямую
+        try:
+            uuid_list = list(vs.idx_to_uuid.values())
+            print(f"DEBUG: Found {len(uuid_list)} UUIDs in index")
+            
+            # Получаем метаданные для каждого UUID
+            for uuid in uuid_list:
+                item = vs.get(uuid)
+                if item and not item.get("deleted", False):
+                    # Добавляем UUID в метаданные
+                    item["uuid"] = uuid
+                    items.append(item)
+        except Exception as e:
+            print(f"ERROR accessing idx_to_uuid: {str(e)}")
+            # Пытаемся использовать альтернативный метод
+            try:
+                # Альтернативный метод - напрямую обратиться к metadata
+                metadata = getattr(vs, "metadata", {})
+                print(f"DEBUG: Found {len(metadata)} items in metadata")
+                
+                for uuid, item_data in metadata.items():
+                    if not item_data.get("deleted", False):
+                        item = dict(item_data)
+                        item["uuid"] = uuid
+                        items.append(item)
+            except Exception as e2:
+                print(f"ERROR accessing metadata: {str(e2)}")
+                # Возвращаем пустой результат в случае ошибки
+                return {
+                    "results": [],
+                    "total": 0,
+                    "page": offset // limit + 1 if limit > 0 else 1,
+                    "pages": 0
+                }
+        
+        print(f"DEBUG: Got {len(items)} items from index")
+        
+        # Фильтруем элементы согласно заданным фильтрам
+        for item in items:
+            # Применяем фильтры
+            if category and category.lower() != "all" and category not in item.get("categories", []):
+                continue
+                
+            if style and style.lower() != "all" and style not in item.get("styles", []):
+                continue
+                
+            if tags and tags.lower() != "all":
+                tag_list = [tag.strip().lower() for tag in tags.split(",")]
+                item_tags = [tag.lower() for tag in item.get("tags", [])]
+                if not any(tag in item_tags for tag in tag_list):
+                    continue
+            
+            # Добавляем дополнительные поля если их нет
+            if "score" not in item:
+                item["score"] = 1.0
+                
+            # Добавляем элемент в результаты после фильтрации
+            results.append(item)
+        
+        print(f"DEBUG: After filtering: {len(results)} items remain")
+        
+        # Сортировка результатов
+        if sort_by == "newest":
+            results.sort(key=lambda x: x.get("created_at", "2023-01-01T00:00:00"), reverse=True)
+        else:  # Сортировка по популярности по умолчанию
+            results.sort(key=lambda x: x.get("popularity", 0), reverse=True)
+        
+        # Пагинация
+        total = len(results)
+        pages = (total + limit - 1) // limit if limit > 0 else 1
+        page = offset // limit + 1 if limit > 0 else 1
+        
+        # Применяем пагинацию
+        paginated_results = results[offset:offset+limit]
+        
+        print(f"DEBUG: Returning {len(paginated_results)} items (page {page}/{pages}, total: {total})")
+        
+        return {
+            "results": paginated_results,
+            "total": total,
+            "page": page,
+            "pages": pages
+        }
+    except Exception as e:
+        print(f"ERROR in explore_nfts: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        # В случае ошибки возвращаем пустой результат
+        return {
+            "results": [],
+            "total": 0,
+            "page": offset // limit + 1 if limit > 0 else 1,
+            "pages": 0
+        }
 
 
 @router.get("/health", summary="Liveness probe")
