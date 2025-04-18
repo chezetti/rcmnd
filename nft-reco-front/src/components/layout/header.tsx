@@ -1,17 +1,103 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
+import apiService from "@/lib/api";
+import { NFTItem } from "@/lib/store";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<NFTItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+
+    // Установить начальное состояние scrolled при монтировании
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Handle clicks outside of search results
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+
+    // Clear previous timeout
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    if (term.trim().length < 2) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    // Debounce search requests
+    searchTimeout.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await apiService.explore({
+          tags: term,
+          limit: 6,
+        });
+        setSearchResults(response.data.results || []);
+        setShowResults(true);
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleSearchItemClick = (uuid: string) => {
+    router.push(`/item/${uuid}`);
+    setShowResults(false);
+    setSearchTerm("");
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim().length > 0) {
+      router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
+      setShowResults(false);
+    }
   };
 
   const navItems = [
@@ -22,78 +108,188 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md shadow-sm supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? "scrolled bg-background/80 backdrop-blur-xl shadow-sm"
+          : "bg-background"
+      }`}
+    >
+      <div className="container-fluid py-3 flex items-center justify-between px-4 md:px-8 mx-auto">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500">
-              NFT Recommender
+          <Link href="/" className="flex items-center space-x-3">
+            <span className="font-bold text-2xl tracking-wide">
+              <span className="bg-gradient-to-r from-purple-600 via-pink-400 to-orange-600 bg-clip-text text-transparent">
+                RCMND
+              </span>
             </span>
           </Link>
-        </div>
 
-        {/* Мобильное меню кнопка */}
-        <button
-          className="md:hidden p-2"
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
-        >
-          {isMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
+          {/* Search box */}
+          <div
+            ref={searchRef}
+            className="hidden md:flex ml-8 relative rounded-full"
+          >
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <div className="flex items-center w-72 h-10 px-4 border border-input rounded-full bg-background">
+                <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search NFTs..."
+                  className="bg-transparent border-none outline-none w-full text-sm"
+                />
+                {isSearching && (
+                  <div className="w-4 h-4 border-t-2 border-primary rounded-full animate-spin mr-2"></div>
+                )}
+              </div>
 
-        {/* Десктопное меню */}
-        <div className="hidden md:flex items-center space-x-6">
-          <nav className="flex items-center space-x-6 text-sm font-medium">
+              {/* Search results dropdown */}
+              {showResults && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+                  <div className="max-h-[400px] overflow-y-auto py-2">
+                    {searchResults.map((item) => (
+                      <div
+                        key={item.uuid}
+                        className="px-4 py-2 hover:bg-muted cursor-pointer"
+                        onClick={() => handleSearchItemClick(item.uuid)}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-muted rounded overflow-hidden mr-3">
+                            <Image
+                              src={`https://picsum.photos/seed/${item.uuid}/32/32`}
+                              alt={item.name || "NFT"}
+                              width={32}
+                              height={32}
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">
+                              {item.name || "Unnamed NFT"}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                              {item.description?.substring(0, 30) ||
+                                "No description"}
+                              {(item.description?.length || 0) > 30
+                                ? "..."
+                                : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-gray-600 border-border px-4 py-2">
+                    <Button
+                      variant="link"
+                      className="text-xs w-full justify-center text-primary"
+                      onClick={() =>
+                        router.push(
+                          `/search?q=${encodeURIComponent(searchTerm)}`
+                        )
+                      }
+                    >
+                      See all results
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center ml-6 space-x-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`transition-colors hover:text-foreground/80 ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   pathname === item.path
-                    ? "text-foreground font-semibold"
-                    : "text-foreground/60"
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-secondary"
                 }`}
               >
                 {item.name}
               </Link>
             ))}
           </nav>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/auth/login">Login</Link>
-          </Button>
         </div>
 
-        {/* Мобильное меню выпадающее */}
-        {isMenuOpen && (
-          <div className="absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b border-border z-50 md:hidden shadow-md">
-            <div className="container py-4">
-              <nav className="flex flex-col space-y-4">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    className={`transition-colors hover:text-foreground/80 ${
-                      pathname === item.path
-                        ? "text-foreground font-semibold"
-                        : "text-foreground/60"
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                <Button variant="outline" size="sm" className="w-full" asChild>
-                  <Link href="/auth/login">Login</Link>
-                </Button>
-              </nav>
-            </div>
+        {/* Right side actions */}
+        <div className="flex items-center space-x-3">
+          <div className="hidden md:block rounded-lg p-[1px] bg-gradient-to-r from-purple-500 to-pink-500">
+            <button className="px-4 py-2 bg-background text-[#F4F5F6] font-medium rounded-[6px] text-sm">
+              LOGIN
+            </button>
           </div>
-        )}
+
+          {/* Mobile menu button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </Button>
+        </div>
       </div>
+
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="md:hidden border-t border-border/10">
+          <div className="container-fluid px-4 py-4">
+            <nav className="flex flex-col space-y-4">
+              {/* Mobile search */}
+              <form onSubmit={handleSearchSubmit}>
+                <div className="flex items-center w-full h-10 px-4 border border-input rounded-full bg-background">
+                  <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search NFTs..."
+                    className="bg-transparent border-none outline-none w-full text-sm"
+                  />
+                  {isSearching && (
+                    <div className="w-4 h-4 border-t-2 border-primary rounded-full animate-spin mr-2"></div>
+                  )}
+                </div>
+              </form>
+
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    pathname === item.path
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              <div className="pt-2">
+                <div className="rounded-lg p-[1px] bg-gradient-to-r from-purple-500 to-pink-500">
+                  <button className="w-full px-4 py-2 bg-background text-white font-medium rounded-[6px] text-sm">
+                    LOGIN
+                  </button>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

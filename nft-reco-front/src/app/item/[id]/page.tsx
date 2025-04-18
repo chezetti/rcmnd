@@ -64,7 +64,7 @@ export default function ItemPage() {
       // Create form data with the item ID for recommendation
       const formData = new FormData();
       formData.append("description", `Similar to item ${itemId}`);
-      formData.append("top_k", "4");
+      formData.append("top_k", "6");
       formData.append("diversify", "true");
       if (userPrefs.userId) {
         formData.append("user_id", userPrefs.userId);
@@ -129,7 +129,7 @@ export default function ItemPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <main className="flex-1 container py-10">
+        <main className="flex-1 container-fluid py-10 px-4 md:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Skeleton className="aspect-square rounded-lg" />
             <div className="space-y-4">
@@ -154,7 +154,7 @@ export default function ItemPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <main className="flex-1 container py-10 text-center">
+        <main className="flex-1 container-fluid py-10 px-4 md:px-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Item Not Found</h2>
           <p className="text-muted-foreground mb-8">
             The NFT you&apos;re looking for doesn&apos;t exist or has been
@@ -170,57 +170,60 @@ export default function ItemPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1 container py-4 sm:py-6 md:py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-8 md:mb-16">
-          {/* NFT image/3D viewer с улучшенной адаптивностью */}
-          <Card className="overflow-hidden rounded-lg border">
-            <CardContent className="p-0">
-              {show3D ? (
-                <div className="aspect-square relative">
-                  <Canvas className="bg-black/5 dark:bg-white/5">
-                    <ambientLight intensity={0.5} />
-                    <spotLight
-                      position={[10, 10, 10]}
-                      angle={0.15}
-                      penumbra={1}
+      <main className="flex-1 container max-w-6xl mx-auto py-4 sm:py-6 md:py-10 px-4 md:px-8">
+        {/* Main content area with centered layout */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,1fr] gap-8 mb-8 md:mb-16">
+          {/* Left side - Image */}
+          <div className="flex justify-center items-start">
+            <Card className="overflow-hidden rounded-lg border w-full max-w-md">
+              <CardContent className="p-0">
+                {show3D ? (
+                  <div className="aspect-square relative">
+                    <Canvas className="bg-black/5 dark:bg-white/5">
+                      <ambientLight intensity={0.5} />
+                      <spotLight
+                        position={[10, 10, 10]}
+                        angle={0.15}
+                        penumbra={1}
+                      />
+                      <Box position={[0, 0, 0]} />
+                      <OrbitControls />
+                    </Canvas>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm"
+                      onClick={() => setShow3D(false)}
+                    >
+                      View 2D
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="aspect-square relative">
+                    <Image
+                      src={`https://picsum.photos/seed/${itemId}/512/512`}
+                      alt={item.name || "NFT Image"}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      priority
+                      unoptimized
                     />
-                    <Box position={[0, 0, 0]} />
-                    <OrbitControls />
-                  </Canvas>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm"
-                    onClick={() => setShow3D(false)}
-                  >
-                    View 2D
-                  </Button>
-                </div>
-              ) : (
-                <div className="aspect-square relative">
-                  <Image
-                    src={`https://picsum.photos/seed/${itemId}/1200/1200`}
-                    alt={item.name || "NFT Image"}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    priority
-                    unoptimized
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm"
-                    onClick={() => setShow3D(true)}
-                  >
-                    View 3D
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm"
+                      onClick={() => setShow3D(true)}
+                    >
+                      View 3D
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* NFT details с улучшенной адаптивностью */}
+          {/* Right side - NFT details */}
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col">
               <div className="flex justify-between items-start flex-wrap gap-2">
@@ -260,7 +263,7 @@ export default function ItemPage() {
               </div>
             </div>
 
-            <div className="border-t border-border pt-4">
+            <div className="pt-4">
               <h2 className="text-lg font-semibold mb-2">Description</h2>
               <p className="text-muted-foreground">
                 {item.description || "No description available"}
@@ -268,7 +271,7 @@ export default function ItemPage() {
             </div>
 
             {item.tags && item.tags.length > 0 && (
-              <div className="border-t border-border pt-4">
+              <div className="pt-4">
                 <h2 className="text-lg font-semibold mb-2">Tags</h2>
                 <div className="flex flex-wrap gap-2">
                   {item.tags.map((tag: string) => (
@@ -279,32 +282,15 @@ export default function ItemPage() {
                 </div>
               </div>
             )}
-
-            <div className="border-t border-border pt-4 flex flex-wrap gap-2">
-              {/* В мобильной версии кнопки будут занимать всю ширину */}
-              <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Buy Now
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto"
-                  onClick={handleLike}
-                >
-                  {isLiked ? "Remove from Favorites" : "Add to Favorites"}
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Similar Items section с улучшенной адаптивностью */}
+        {/* Similar Items section */}
         <div className="mt-6 sm:mt-8 md:mt-12">
           <h2 className="text-xl sm:text-2xl font-bold mb-4">Similar Items</h2>
           {isLoadingSimilar ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Array(4)
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {Array(5)
                 .fill(0)
                 .map((_, index) => (
                   <Skeleton key={index} className="aspect-square rounded-lg" />

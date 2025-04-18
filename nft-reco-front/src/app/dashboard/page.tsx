@@ -36,7 +36,7 @@ export default function DashboardPage() {
         // Create form data for personalized recommendations
         const formData = new FormData();
         formData.append("description", "Personalized recommendations");
-        formData.append("top_k", "12");
+        formData.append("top_k", "15");
         formData.append("diversify", "true");
         formData.append("user_id", userId);
 

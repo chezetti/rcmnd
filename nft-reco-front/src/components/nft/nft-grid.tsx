@@ -7,7 +7,7 @@ import Masonry from "react-masonry-css";
 import { Loader2 } from "lucide-react";
 import NFTCard from "@/components/nft/nft-card";
 import { NFTItem } from "@/lib/store";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface NFTGridProps {
   items: NFTItem[];
@@ -25,7 +25,6 @@ export default function NFTGrid({
   emptyMessage = "No items found",
   onLoadMore,
   hasMore = false,
-  showScores = false,
   layout = "masonry",
 }: NFTGridProps) {
   // Use stable identifiers for NFTs to prevent rendering issues
@@ -100,24 +99,12 @@ export default function NFTGrid({
 
   // Masonry layout configuration
   const breakpointColumnsObj = {
-    default: 4,
-    1400: 4,
-    1100: 3,
+    default: 5, // More columns for larger screens
+    1600: 5,
+    1300: 4,
+    1000: 3,
     768: 2,
-    600: 2,
     500: 1,
-  };
-
-  // Create skeleton placeholders for loading state
-  const renderSkeletons = () => {
-    const count = layout === "grid" ? 8 : 12;
-    return Array(count)
-      .fill(0)
-      .map((_, index) => (
-        <div key={`skeleton-${index}`}>
-          <SkeletonCard />
-        </div>
-      ));
   };
 
   // Empty state
@@ -138,47 +125,64 @@ export default function NFTGrid({
       }}
     >
       {layout === "grid" ? (
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-          {itemsWithIds.map((item) => (
-            <motion.div
-              key={item.stableId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              layoutId={item.stableId}
-              className="pb-2"
-            >
-              <NFTCard nft={item} showScore={showScores} />
-            </motion.div>
-          ))}
-
-          {/* Show skeletons when loading initial content */}
-          {isLoading && items.length === 0 && renderSkeletons()}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 w-full">
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <motion.div
+                  key={`skeleton-${i}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full"
+                >
+                  <Skeleton className="w-full h-[280px] rounded-lg" />
+                </motion.div>
+              ))
+            : itemsWithIds.map((item) => (
+                <motion.div
+                  key={item.stableId}
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <NFTCard nft={item} />
+                </motion.div>
+              ))}
         </div>
       ) : (
         <Masonry
           breakpointCols={breakpointColumnsObj}
-          className="masonry-grid"
-          columnClassName="masonry-grid-column"
+          className="flex w-full"
+          columnClassName="bg-transparent pl-0 pr-3 first:pl-0 last:pr-0"
         >
-          {itemsWithIds.map((item) => (
-            <div key={item.stableId} className="masonry-item">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.3,
-                  ease: "easeOut",
-                }}
-              >
-                <NFTCard nft={item} showScore={showScores} />
-              </motion.div>
-            </div>
-          ))}
-
-          {/* Show skeletons when loading initial content */}
-          {isLoading && items.length === 0 && renderSkeletons()}
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <motion.div
+                  key={`skeleton-${i}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mb-3"
+                >
+                  <Skeleton className="w-full h-[280px] rounded-lg" />
+                </motion.div>
+              ))
+            : itemsWithIds.map((item) => (
+                <motion.div
+                  key={item.stableId}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mb-3"
+                >
+                  <NFTCard nft={item} />
+                </motion.div>
+              ))}
         </Masonry>
       )}
 

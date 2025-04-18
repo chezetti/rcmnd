@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import Uppy from "@uppy/core";
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
@@ -19,13 +20,17 @@ import { FileUploader } from "@/components/ui/file-uploader";
 
 export default function SearchPage() {
   const { userPrefs, setUserPrefs } = useStore();
+  const urlSearchParams = useSearchParams();
+  const queryParam = urlSearchParams.get("q");
+
   const [searchResults, setSearchResults] = useState<NFTItem[]>([]);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(queryParam || "");
   const [balanceValue, setBalanceValue] = useState([50]); // 50% visual, 50% text
   const [searchMode, setSearchMode] = useState<
     "visual" | "textual" | "balanced"
   >((userPrefs.searchMode as "visual" | "textual" | "balanced") || "balanced");
   const uppyInstance = useRef<Uppy | null>(null);
+  const [isInitialSearch, setIsInitialSearch] = useState(true);
 
   // Initialize Uppy
   if (!uppyInstance.current) {
@@ -52,8 +57,28 @@ export default function SearchPage() {
     },
     onSuccess: (data) => {
       setSearchResults(data.results);
+      setIsInitialSearch(false);
     },
   });
+
+  // Auto search when query parameter is present on initial load
+  useEffect(() => {
+    if (queryParam && isInitialSearch) {
+      const formData = new FormData();
+      formData.append("description", queryParam);
+      formData.append("top_k", "12");
+      formData.append("search_mode", "textual"); // Default to textual search for tags
+      formData.append("diversify", userPrefs.diversify.toString());
+
+      if (userPrefs.userId) {
+        formData.append("user_id", userPrefs.userId);
+      }
+
+      searchMutation.mutate(formData);
+      setSearchMode("textual");
+      setBalanceValue([100]);
+    }
+  }, [queryParam, isInitialSearch, userPrefs.diversify, userPrefs.userId]);
 
   // Map balance value to search mode
   const getSearchModeFromBalance = (
@@ -104,6 +129,7 @@ export default function SearchPage() {
 
     // Execute search
     searchMutation.mutate(formData);
+    setIsInitialSearch(false);
   };
 
   // Handle balance change
@@ -211,14 +237,19 @@ export default function SearchPage() {
               </div>
 
               {/* Search button занимает всю ширину на мобильных */}
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleSearch}
-                disabled={searchMutation.isPending}
-              >
-                {searchMutation.isPending ? "Searching..." : "Search"}
-              </Button>
+              <div className="flex justify-center w-full mt-10">
+                <div className="upload-nft-btn w-full max-w-md mx-auto">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full"
+                    onClick={handleSearch}
+                    disabled={searchMutation.isPending}
+                  >
+                    {searchMutation.isPending ? "Searching..." : "Search"}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -233,7 +264,6 @@ export default function SearchPage() {
               items={searchResults}
               layout="masonry"
               emptyMessage="No results found. Try different search parameters."
-              showScores={true}
             />
           </div>
         )}

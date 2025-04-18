@@ -142,7 +142,9 @@ export default function UploadPage() {
 
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name" className="form-field-label">
+                      Name
+                    </Label>
                     <Input
                       id="name"
                       placeholder="NFT Name"
@@ -153,7 +155,9 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="form-field-label">
+                      Description
+                    </Label>
                     <Textarea
                       id="description"
                       placeholder="Describe your NFT..."
@@ -165,7 +169,9 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tags">Tags (comma separated)</Label>
+                    <Label htmlFor="tags" className="form-field-label">
+                      Tags (comma separated)
+                    </Label>
                     <Input
                       id="tags"
                       placeholder="art, abstract, cyberpunk, etc."
@@ -178,14 +184,18 @@ export default function UploadPage() {
             </div>
 
             {/* Submit button */}
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full max-w-md mx-auto block"
-              disabled={uploadMutation.isPending}
-            >
-              {uploadMutation.isPending ? "Uploading..." : "Upload NFT"}
-            </Button>
+            <div className="flex justify-center w-full mt-10">
+              <div className="upload-nft-btn w-full max-w-md mx-auto">
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={uploadMutation.isPending}
+                >
+                  {uploadMutation.isPending ? "Uploading..." : "Upload NFT"}
+                </Button>
+              </div>
+            </div>
           </form>
         </motion.div>
       </main>
