@@ -23,7 +23,7 @@
   --ring: #7857FF;
   --radius: 0.5rem;
   --font-sans: 'Inter', system-ui, sans-serif;
-  
+
   /* Rarible colors */
   --yellow: #FFDE59;
   --header-blur: 16px;
@@ -58,7 +58,7 @@
     --border: #333340;
     --input: #333340;
     --ring: #7857FF;
-    
+
     /* Rarible dark colors */
     --header-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.08);
   }
@@ -90,6 +90,7 @@
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-100%);
   }
@@ -106,8 +107,10 @@
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Глобальная стилизация скроллбаров */
@@ -142,13 +145,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   letter-spacing: -0.01em;
-  background-image: radial-gradient(
-    circle at center,
-    rgba(25, 25, 35, 0.8) 0%,
-    rgba(13, 13, 17, 1) 70%
-  );
+  background-image: radial-gradient(circle at center,
+      rgba(25, 25, 35, 0.8) 0%,
+      rgba(13, 13, 17, 1) 70%);
   background-attachment: fixed;
-  overflow-x: hidden; /* Предотвращаем горизонтальный скролл на мобильных */
+  overflow-x: hidden;
+  /* Предотвращаем горизонтальный скролл на мобильных */
 }
 
 /* Header styling like Rarible */
@@ -192,7 +194,7 @@ nav a.active {
   border-radius: 8px;
 }
 
-.gradient-border > button {
+.gradient-border>button {
   background-color: var(--background);
   color: white;
   font-weight: 500;
@@ -240,22 +242,22 @@ nav a.active {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
-  
+
   .container-fluid {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
-  
+
   main {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
   }
-  
+
   h1 {
     font-size: 1.75rem !important;
     margin-bottom: 0.5rem !important;
   }
-  
+
   h2 {
     font-size: 1.25rem !important;
   }
@@ -274,7 +276,8 @@ nav a.active {
 }
 
 .masonry-item {
-  margin-bottom: 24px; /* Increased spacing between items */
+  margin-bottom: 24px;
+  /* Increased spacing between items */
 }
 
 /* Улучшенная адаптивность для masonry на мобильных устройствах */
@@ -282,11 +285,11 @@ nav a.active {
   .masonry-grid {
     margin-left: -12px;
   }
-  
+
   .masonry-grid-column {
     padding-left: 12px;
   }
-  
+
   .masonry-item {
     margin-bottom: 12px;
   }
@@ -330,7 +333,7 @@ nav a.active {
     margin-bottom: 1.5rem;
     border-radius: 1rem;
   }
-  
+
   .latest-drops h2 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
@@ -344,36 +347,39 @@ nav a.active {
 
 /* Адаптивность контента на мобильных устройствах */
 @media (max-width: 640px) {
+
   /* Уменьшаем отступы */
   .p-6 {
     padding: 1rem !important;
   }
-  
+
   /* Уменьшаем размер карточек */
   .card {
     border-radius: 0.75rem !important;
   }
-  
+
   /* Уменьшаем отступы между карточками */
-  .gap-6, .gap-8 {
+  .gap-6,
+  .gap-8 {
     gap: 0.75rem !important;
   }
-  
+
   /* Уменьшаем элементы интерфейса */
   .text-4xl {
     font-size: 1.75rem !important;
   }
-  
+
   .text-2xl {
     font-size: 1.5rem !important;
   }
-  
+
   .text-xl {
     font-size: 1.25rem !important;
   }
-  
+
   /* Улучшаем удобство кликов */
-  button, .btn {
+  button,
+  .btn {
     min-height: 2.5rem;
     padding-left: 1rem;
     padding-right: 1rem;
@@ -385,7 +391,7 @@ nav a.active {
   .grid-cols-1 {
     grid-template-columns: 1fr !important;
   }
-  
+
   /* Улучшение grid-сеток */
   .grid {
     row-gap: 0.75rem !important;
@@ -397,25 +403,25 @@ nav a.active {
   .md\:grid-cols-3 {
     grid-template-columns: 1fr !important;
   }
-  
+
   .md\:grid-cols-2 {
     grid-template-columns: 1fr !important;
   }
-  
+
   /* Исправление размеров и отступов для мобильных экранов */
   .mb-10 {
     margin-bottom: 1.5rem !important;
   }
-  
+
   .mb-8 {
     margin-bottom: 1rem !important;
   }
-  
+
   .py-10 {
     padding-top: 1.5rem !important;
     padding-bottom: 1.5rem !important;
   }
-  
+
   /* Исправление боковых отступов для контейнера */
   .container {
     padding-left: 0.75rem !important;
@@ -429,11 +435,11 @@ nav a.active {
     padding-left: 0.5rem !important;
     padding-right: 0.5rem !important;
   }
-  
+
   .text-sm {
     font-size: 0.75rem !important;
   }
-  
+
   .grid {
     row-gap: 0.5rem !important;
   }
@@ -444,7 +450,7 @@ nav a.active {
   border-color: var(--border) !important;
 }
 
-.bg-card, 
+.bg-card,
 div[class*="SelectContent"] {
   background-color: var(--card) !important;
   border-color: var(--border) !important;
@@ -481,13 +487,17 @@ footer {
 }
 
 /* Стили для кнопок и элементов в стиле Rarible */
-button, .btn, .tab {
+button,
+.btn,
+.tab {
   border-radius: 0.75rem !important;
   font-weight: 600;
 }
 
 /* Rarible-стиль заголовков */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-weight: 800;
   letter-spacing: -0.03em;
 }

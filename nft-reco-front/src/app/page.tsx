@@ -49,6 +49,11 @@ export default function ExplorePage() {
         categories: [category],
         styles: [style],
         tags: tags,
+        creator: "Unknown Creator",
+        image_url: `https://api.dicebear.com/6.x/shapes/svg?seed=${i}`,
+        category: category,
+        currency: "ETH",
+        price: 0.1 + Math.random() * 2,
       });
     }
 
@@ -82,11 +87,10 @@ export default function ExplorePage() {
     // Отключаем автоматическую загрузку при монтировании компонента
     // Это позволит избежать множественных запросов при инициализации
     enabled: Boolean(searchParams),
-    // Кэшируем результаты на 5 минут, чтобы избежать лишних запросов
-    staleTime: 5 * 60 * 1000,
-    // Предотвращаем повторные запросы при потере фокуса и повторном подключении
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    // Отключаем кеширование для обновления данных при каждой навигации
+    staleTime: 0,
+    // Обновляем данные при повторном монтировании страницы
+    refetchOnMount: "always",
     // Отключаем повторные попытки при ошибке
     retry: false,
   });
@@ -257,22 +261,9 @@ export default function ExplorePage() {
                     options={[
                       { value: "popularity", label: "Popularity" },
                       { value: "latest", label: "Latest" },
+                      { value: "oldest", label: "Oldest" },
                       { value: "price_low", label: "Price: Low to High" },
                       { value: "price_high", label: "Price: High to Low" },
-                    ]}
-                  />
-                </div>
-                <div>
-                  <FilterSelect
-                    placeholder="Items per page"
-                    value={searchParams.limit.toString()}
-                    onValueChange={(value) =>
-                      handleFilterChange("limit", value)
-                    }
-                    options={[
-                      { value: "10", label: "10 per page" },
-                      { value: "20", label: "20 per page" },
-                      { value: "50", label: "50 per page" },
                     ]}
                   />
                 </div>
@@ -281,13 +272,13 @@ export default function ExplorePage() {
           </div>
         )}
 
-        {/* Featured/Results display */}
+        {/* Main content area */}
         <NFTGrid
           items={allItems}
-          isLoading={isLoading && allItems.length === 0}
+          isLoading={isLoading}
           onLoadMore={handleLoadMore}
           hasMore={hasMore}
-          emptyMessage="No NFTs found. Try different filters."
+          emptyMessage="No NFTs found matching your criteria. Try adjusting your filters."
         />
       </main>
       <Footer />

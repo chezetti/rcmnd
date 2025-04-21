@@ -85,15 +85,20 @@ export default function ItemPage() {
 
   // Record click on visit
   useEffect(() => {
-    if (itemId && userPrefs.userId) {
+    if (itemId) {
+      // Always record the click in the frontend store
       recordClick(itemId);
+
+      // Submit view feedback to the API (will work even without userId)
       apiService
         .submitFeedback({
           item_uuid: itemId,
           user_id: userPrefs.userId,
           feedback_type: "view",
         })
-        .catch(console.error);
+        .catch((error) => {
+          console.error("Failed to submit view feedback:", error);
+        });
     }
   }, [itemId, userPrefs.userId, recordClick]);
 
@@ -234,7 +239,7 @@ export default function ItemPage() {
                   variant="ghost"
                   size="icon"
                   onClick={handleLike}
-                  className={`rounded-full ${isLiked ? "text-pink-500" : ""}`}
+                  className={`rounded-full ${isLiked ? "text-red-500" : ""}`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

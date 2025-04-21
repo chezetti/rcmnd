@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from pathlib import Path
 from enum import Enum
 from typing import Dict, List, Tuple
@@ -118,3 +119,30 @@ ADVANCED_SEARCH_CONFIG = {
     "rerank_factor": 3,  # Множитель для количества результатов при предварительном поиске
     "use_feedback": True  # Использовать обратную связь для улучшения результатов
 }
+
+# ---------------------------------------------------------------------------
+# Authentication configuration
+# ---------------------------------------------------------------------------
+
+# JWT Configuration
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", secrets.token_hex(32))
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_MINUTES = 60 * 24  # 24 hours
+
+# Password hashing
+PASSWORD_HASH_ALGORITHM = "bcrypt"
+PASSWORD_HASH_ROUNDS = 12
+
+# User storage file
+USERS_FILE: Path = PERSIST_DIR / "users.json"
+
+# Rate limiting for auth endpoints
+AUTH_RATE_LIMIT = {
+    "login_attempts": 5,  # Max login attempts
+    "window_seconds": 300,  # Time window in seconds (5 minutes)
+    "lockout_minutes": 15  # Lockout time in minutes after exceeding attempts
+}
+
+# Access control settings
+REQUIRE_AUTH_FOR_WRITE = False  # Require authentication for write operations (add, delete)
+REQUIRE_AUTH_FOR_FEEDBACK = False  # Require authentication for feedback submission

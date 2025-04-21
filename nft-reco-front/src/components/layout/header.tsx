@@ -5,9 +5,16 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, User, LogOut } from "lucide-react";
 import apiService from "@/lib/api";
-import { NFTItem } from "@/lib/store";
+import useStore, { NFTItem } from "@/lib/store";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const pathname = usePathname();
@@ -20,6 +27,10 @@ export default function Header() {
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Get auth state from store
+  const { auth, logout } = useStore();
+  const { isAuthenticated, user } = auth;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -100,11 +111,22 @@ export default function Header() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
   const navItems = [
     { name: "Explore", path: "/" },
     { name: "Search", path: "/search" },
-    { name: "Upload", path: "/upload" },
-    { name: "Dashboard", path: "/dashboard" },
+    { name: "Statistics", path: "/statistics" },
+    // Only show Upload and Dashboard tabs for authenticated users
+    ...(isAuthenticated
+      ? [
+          { name: "Upload", path: "/upload" },
+          { name: "Dashboard", path: "/dashboard" },
+        ]
+      : []),
   ];
 
   return (
@@ -220,11 +242,44 @@ export default function Header() {
 
         {/* Right side actions */}
         <div className="flex items-center space-x-3">
-          <div className="hidden md:block rounded-lg p-[1px] bg-gradient-to-r from-purple-500 to-pink-500">
-            <button className="px-4 py-2 bg-background text-[#F4F5F6] font-medium rounded-[6px] text-sm">
-              LOGIN
-            </button>
-          </div>
+          {isAuthenticated ? (
+            <div className="hidden md:flex items-center space-x-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span>{user?.username}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <div className="hidden md:block">
+              <Link href="/login">
+                <div className="p-[1px] bg-gradient-to-r from-purple-600 via-pink-400 to-orange-600 overflow-hidden rounded-lg">
+                  <Button
+                    size="lg"
+                    className="bg-background text-foreground hover:bg-background/90 rounded-md"
+                  >
+                    LOGIN
+                  </Button>
+                </div>
+              </Link>
+            </div>
+          )}
 
           {/* Mobile menu button */}
           <Button
@@ -279,12 +334,39 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
+
+              {/* Mobile auth options */}
               <div className="pt-2">
-                <div className="rounded-lg p-[1px] bg-gradient-to-r from-purple-500 to-pink-500">
-                  <button className="w-full px-4 py-2 bg-background text-white font-medium rounded-[6px] text-sm">
-                    LOGIN
-                  </button>
-                </div>
+                {isAuthenticated ? (
+                  <>
+                    <div className="border-t border-border/10 pt-3 mb-2">
+                      <p className="px-4 text-sm text-muted-foreground">
+                        Signed in as{" "}
+                        <span className="font-medium">{user?.username}</span>
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <div className="rounded-lg p-[1px] bg-gradient-to-r from-purple-600 via-pink-400 to-orange-600 overflow-hidden group">
+                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                      <button className="w-full px-4 py-2 bg-background text-foreground font-medium rounded-md text-sm transition-transform transform active:scale-95">
+                        LOGIN
+                        <span className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                      </button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </nav>
           </div>

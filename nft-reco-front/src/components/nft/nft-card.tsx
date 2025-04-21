@@ -16,15 +16,18 @@ interface NFTCardProps {
 }
 
 export default function NFTCard({ nft }: NFTCardProps) {
-  const { userPrefs, recordClick } = useStore();
+  const { userPrefs, recordClick, toggleFavorite } = useStore();
   const [imageError, setImageError] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+
+  // Check if the item is in the favorites list
+  const isFavorite = userPrefs.favoritedItems.includes(nft.uuid);
 
   // Placeholder image for NFTs
   // In a real implementation, you'd fetch the image from your API
   const imageUrl = `https://picsum.photos/seed/${nft.uuid}/512/768`;
 
   const handleClick = async () => {
+    // Record click in frontend store
     recordClick(nft.uuid);
 
     // Submit click feedback to the API
@@ -33,14 +36,20 @@ export default function NFTCard({ nft }: NFTCardProps) {
         item_uuid: nft.uuid,
         user_id: userPrefs.userId,
         feedback_type: "click",
+        value: 1.0, // Explicit value for clarity
       });
+      console.log(`Successfully recorded click for ${nft.uuid}`);
     } catch (error) {
       console.error("Failed to submit click feedback", error);
     }
   };
 
   const handleLike = async () => {
-    setIsLiked(!isLiked);
+    // Toggle favorite in the store
+    toggleFavorite(nft.uuid);
+
+    // Will be true after toggling if item was just added to favorites
+    const isNowFavorite = !isFavorite;
 
     // Submit like/unlike feedback to the API
     try {
@@ -48,6 +57,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
         item_uuid: nft.uuid,
         user_id: userPrefs.userId,
         feedback_type: "favorite",
+        value: isNowFavorite ? 1 : 0,
       });
     } catch (error) {
       console.error("Failed to submit like feedback", error);
@@ -90,7 +100,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
           {/* Показатель соответствия алгоритма в левом верхнем углу */}
           {nft.score !== undefined && (
             <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-md px-2 py-1">
-              <div className="text-xs font-medium text-white flex items-center">
+              <div className="text-xs font-medium text-[#F4F5F6] flex items-center">
                 <span>Score: {(nft.score * 100).toFixed(0)}%</span>
               </div>
             </div>
@@ -112,7 +122,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
             {/* Иконка избранного выровнена с заголовком */}
             <button
               className={`transition-colors ${
-                isLiked
+                isFavorite
                   ? "text-red-500"
                   : "text-muted-foreground hover:text-red-500"
               }`}
@@ -120,7 +130,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
             >
               <Heart
                 className="h-5 w-5"
-                fill={isLiked ? "currentColor" : "none"}
+                fill={isFavorite ? "currentColor" : "none"}
               />
             </button>
           </div>

@@ -58,7 +58,7 @@ class TestFeedbackSystem(unittest.TestCase):
         # Check user preference
         self.assertIn(user_id, self.feedback_system.feedback_data["user_preferences"])
         self.assertIn(item_uuid, self.feedback_system.feedback_data["user_preferences"][user_id])
-        self.assertEqual(self.feedback_system.feedback_data["user_preferences"][user_id][item_uuid], 1.0)
+        self.assertEqual(self.feedback_system.feedback_data["user_preferences"][user_id][item_uuid], 0.5)
     
     def test_record_purchase(self):
         """Test recording a purchase."""
@@ -73,7 +73,7 @@ class TestFeedbackSystem(unittest.TestCase):
         # Check user preference
         self.assertIn(user_id, self.feedback_system.feedback_data["user_preferences"])
         self.assertIn(item_uuid, self.feedback_system.feedback_data["user_preferences"][user_id])
-        self.assertEqual(self.feedback_system.feedback_data["user_preferences"][user_id][item_uuid], 2.0)
+        self.assertEqual(self.feedback_system.feedback_data["user_preferences"][user_id][item_uuid], 1.0)
     
     def test_item_boost(self):
         """Test getting item boost based on feedback."""

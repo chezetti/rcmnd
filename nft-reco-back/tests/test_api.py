@@ -55,14 +55,14 @@ class TestAPI(unittest.TestCase):
     
     def test_health_endpoint(self):
         """Test the health check endpoint."""
-        response = self.client.get("/health")
+        response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["status"], "ok")
     
     def test_stats_endpoint(self):
         """Test the stats endpoint."""
-        response = self.client.get("/stats")
+        response = self.client.get("/api/stats")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("total_items", data)
@@ -81,14 +81,14 @@ class TestAPI(unittest.TestCase):
         }
         
         # Add the item
-        response = self.client.post("/items", files=files, data=payload)
+        response = self.client.post("/api/items", files=files, data=payload)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("uuid", data)
         
         # Get the item
         item_uuid = data["uuid"]
-        response = self.client.get(f"/items/{item_uuid}")
+        response = self.client.get(f"/api/items/{item_uuid}")
         self.assertEqual(response.status_code, 200)
         item_data = response.json()
         self.assertEqual(item_data["uuid"], item_uuid)
@@ -105,17 +105,17 @@ class TestAPI(unittest.TestCase):
         }
         
         # Add the item
-        response = self.client.post("/items", files=files, data=payload)
+        response = self.client.post("/api/items", files=files, data=payload)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_uuid = data["uuid"]
         
         # Delete the item
-        response = self.client.delete(f"/items/{item_uuid}")
+        response = self.client.delete(f"/api/items/{item_uuid}")
         self.assertEqual(response.status_code, 200)
         
         # Try to get the deleted item
-        response = self.client.get(f"/items/{item_uuid}")
+        response = self.client.get(f"/api/items/{item_uuid}")
         self.assertEqual(response.status_code, 404)
     
     def test_recommend_endpoint(self):
@@ -132,7 +132,7 @@ class TestAPI(unittest.TestCase):
                 "tags": ",".join(test_meta["tags"])
             }
             
-            self.client.post("/items", files=files, data=payload)
+            self.client.post("/api/items", files=files, data=payload)
         
         # Test recommending based on an uploaded image
         files = {"image": ("query.png", self.test_image_bytes, "image/png")}
@@ -142,7 +142,7 @@ class TestAPI(unittest.TestCase):
             "top_k": 3
         }
         
-        response = self.client.post("/recommend", files=files, data=payload)
+        response = self.client.post("/api/recommend", files=files, data=payload)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("results", data)
@@ -166,7 +166,7 @@ class TestAPI(unittest.TestCase):
         }
         
         # Add the item
-        response = self.client.post("/items", files=files, data=payload)
+        response = self.client.post("/api/items", files=files, data=payload)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_uuid = data["uuid"]
@@ -179,7 +179,11 @@ class TestAPI(unittest.TestCase):
             "value": 1.0
         }
         
-        response = self.client.post("/feedback", json=feedback_payload)
+        response = self.client.post("/api/feedback", json={"feedback": feedback_payload})
+        if response.status_code != 200:
+            print(f"Feedback endpoint failed with status {response.status_code}")
+            print(f"Response content: {response.content}")
+            print(f"Request payload: {feedback_payload}")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["status"], "success")
@@ -197,7 +201,7 @@ class TestAPI(unittest.TestCase):
                 "tags": "explore,test,api"
             }
             
-            self.client.post("/items", files=files, data=payload)
+            self.client.post("/api/items", files=files, data=payload)
         
         # Test explore with tags parameter
         params = {
@@ -206,7 +210,7 @@ class TestAPI(unittest.TestCase):
             "offset": 0
         }
         
-        response = self.client.get("/explore", params=params)
+        response = self.client.get("/api/explore", params=params)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("results", data)

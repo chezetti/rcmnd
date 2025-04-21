@@ -6,6 +6,12 @@ python-dotenv>=0.19.0
 aiofiles==23.2.1
 python-multipart>=0.0.5
 
+# Auth dependencies
+PyJWT==2.8.0
+bcrypt==4.1.2
+email-validator==2.1.0
+passlib==1.7.4
+
 # Core ML stack
 torch>=1.10.0
 torchvision==0.17.2

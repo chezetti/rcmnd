@@ -41,12 +41,25 @@ class FeedbackSystem:
             "clicks": {},  # UUID -> int (clicks count)
             "favorites": {},  # UUID -> int (favorites count)
             "purchases": {},  # UUID -> int (purchases count)
+            "views": {},  # item_uuid -> count
+            "favorites_users": {},  # item_uuid -> [user_id1, user_id2, ...]
+            "purchases_users": {},  # item_uuid -> [user_id1, user_id2, ...]
             "user_preferences": {},  # user_id -> {uuid -> score}
             "item_similarity_boost": {}  # uuid -> {uuid -> boost}
         }
         
         # Загрузка существующих данных, если они есть
         self._load_feedback()
+        
+        # Убедимся, что все необходимые ключи существуют
+        required_keys = [
+            "clicks", "favorites", "purchases", "views",
+            "favorites_users", "purchases_users",
+            "user_preferences", "item_similarity_boost"
+        ]
+        for key in required_keys:
+            if key not in self.feedback_data:
+                self.feedback_data[key] = {}
     
     def _load_feedback(self):
         """Загрузка данных обратной связи из файла."""
@@ -74,46 +87,119 @@ class FeedbackSystem:
             user_id: ID пользователя (опционально)
         """
         with self.lock:
+            # Инициализируем словарь кликов, если он не существует
+            if "clicks" not in self.feedback_data:
+                self.feedback_data["clicks"] = {}
+            
+            # Инициализируем структуру для элемента
             if item_uuid not in self.feedback_data["clicks"]:
-                self.feedback_data["clicks"][item_uuid] = 0
+                # Инициализируем как словарь для хранения пользовательских кликов
+                self.feedback_data["clicks"][item_uuid] = {}
             
-            self.feedback_data["clicks"][item_uuid] += 1
+            # Если структура неожиданного типа (не словарь), преобразуем ее
+            if not isinstance(self.feedback_data["clicks"][item_uuid], dict):
+                # Сохраняем предыдущее значение как общий счетчик
+                old_count = self.feedback_data["clicks"][item_uuid] if isinstance(self.feedback_data["clicks"][item_uuid], int) else 0
+                # Преобразуем в словарь для хранения пользовательских кликов
+                self.feedback_data["clicks"][item_uuid] = {"_total": old_count}
             
-            # Сохраняем обратную связь от конкретного пользователя, если задан
+            # Увеличиваем общий счетчик кликов
+            if "_total" not in self.feedback_data["clicks"][item_uuid]:
+                self.feedback_data["clicks"][item_uuid]["_total"] = 0
+            self.feedback_data["clicks"][item_uuid]["_total"] += 1
+            
+            # Если указан пользователь, сохраняем его клик
             if user_id:
+                # Сохраняем клик пользователя
+                self.feedback_data["clicks"][item_uuid][user_id] = True
+                
+                # Обновляем предпочтения пользователя
                 if user_id not in self.feedback_data["user_preferences"]:
                     self.feedback_data["user_preferences"][user_id] = {}
                 
                 if item_uuid not in self.feedback_data["user_preferences"][user_id]:
                     self.feedback_data["user_preferences"][user_id][item_uuid] = 0
                 
-                # Увеличиваем счетчик просмотров
+                # Увеличиваем счетчик взаимодействия пользователя
                 self.feedback_data["user_preferences"][user_id][item_uuid] += 0.1
             
             # Сохраняем данные
             self._save_feedback()
     
-    def record_favorite(self, item_uuid: str, user_id: Optional[str] = None):
+    def record_favorite(self, item_uuid: str, user_id: Optional[str] = None, value: float = 1.0):
         """
-        Регистрирует добавление элемента в избранное.
+        Регистрирует добавление или удаление элемента из избранного.
         
         Args:
             item_uuid: UUID элемента
             user_id: ID пользователя (опционально)
+            value: 1.0 для добавления в избранное, 0.0 для удаления из избранного
         """
         with self.lock:
-            if item_uuid not in self.feedback_data["favorites"]:
-                self.feedback_data["favorites"][item_uuid] = 0
-            
-            self.feedback_data["favorites"][item_uuid] += 1
+            # Инициализируем структуры данных, если они отсутствуют
+            if "favorites" not in self.feedback_data:
+                self.feedback_data["favorites"] = {}
+            if "favorites_users" not in self.feedback_data:
+                self.feedback_data["favorites_users"] = {}
+            if "user_preferences" not in self.feedback_data:
+                self.feedback_data["user_preferences"] = {}
             
             # Сохраняем обратную связь от конкретного пользователя, если задан
             if user_id:
-                if user_id not in self.feedback_data["user_preferences"]:
-                    self.feedback_data["user_preferences"][user_id] = {}
+                # Инициализируем список пользователей для элемента, если его нет
+                if item_uuid not in self.feedback_data["favorites_users"]:
+                    self.feedback_data["favorites_users"][item_uuid] = []
                 
-                # Добавление в избранное имеет высокий вес
-                self.feedback_data["user_preferences"][user_id][item_uuid] = 1.0
+                # Добавление в избранное (value > 0)
+                if value > 0:
+                    # Добавляем пользователя в список, если его там еще нет
+                    if user_id not in self.feedback_data["favorites_users"][item_uuid]:
+                        self.feedback_data["favorites_users"][item_uuid].append(user_id)
+                        
+                        # Увеличиваем счетчик избранного для элемента
+                        if item_uuid not in self.feedback_data["favorites"]:
+                            self.feedback_data["favorites"][item_uuid] = 0
+                        self.feedback_data["favorites"][item_uuid] += 1
+                    
+                    # Обновляем предпочтения пользователя
+                    if user_id not in self.feedback_data["user_preferences"]:
+                        self.feedback_data["user_preferences"][user_id] = {}
+                    
+                    # Устанавливаем значение 1.0 вместо 0.5, чтобы гарантировать, что значение > 0
+                    self.feedback_data["user_preferences"][user_id][item_uuid] = 1.0
+                    
+                    # Debugs
+                    print(f"DEBUG: Added item {item_uuid} to favorites for user {user_id}")
+                    print(f"DEBUG: User preferences value: {self.feedback_data['user_preferences'][user_id][item_uuid]}")
+                    print(f"DEBUG: favorites_users: {self.feedback_data['favorites_users'][item_uuid]}")
+                
+                # Удаление из избранного (value == 0)
+                else:
+                    # Удаляем пользователя из списка, если он там есть
+                    if user_id in self.feedback_data["favorites_users"][item_uuid]:
+                        self.feedback_data["favorites_users"][item_uuid].remove(user_id)
+                        
+                        # Уменьшаем счетчик избранного для элемента
+                        if item_uuid in self.feedback_data["favorites"]:
+                            self.feedback_data["favorites"][item_uuid] = max(0, self.feedback_data["favorites"][item_uuid] - 1)
+                    
+                    # Обновляем предпочтения пользователя
+                    if user_id in self.feedback_data["user_preferences"]:
+                        if item_uuid in self.feedback_data["user_preferences"][user_id]:
+                            # Удаляем запись о предпочтении или уменьшаем оценку
+                            self.feedback_data["user_preferences"][user_id][item_uuid] = 0.0
+                    
+                    # Debugs
+                    print(f"DEBUG: Removed item {item_uuid} from favorites for user {user_id}")
+            else:
+                # Если пользователь не указан, просто обновляем общий счетчик избранного
+                if item_uuid not in self.feedback_data["favorites"]:
+                    self.feedback_data["favorites"][item_uuid] = 0
+                
+                if value > 0:
+                    self.feedback_data["favorites"][item_uuid] += 1
+                else:
+                    self.feedback_data["favorites"][item_uuid] = max(0, self.feedback_data["favorites"][item_uuid] - 1)
             
             # Сохраняем данные
             self._save_feedback()
@@ -134,11 +220,22 @@ class FeedbackSystem:
             
             # Сохраняем обратную связь от конкретного пользователя, если задан
             if user_id:
+                # Инициализируем список пользователей для элемента, если его нет
+                if item_uuid not in self.feedback_data["purchases_users"]:
+                    self.feedback_data["purchases_users"][item_uuid] = []
+                
+                # Добавляем пользователя в список, если его там еще нет
+                if user_id not in self.feedback_data["purchases_users"][item_uuid]:
+                    self.feedback_data["purchases_users"][item_uuid].append(user_id)
+                
                 if user_id not in self.feedback_data["user_preferences"]:
                     self.feedback_data["user_preferences"][user_id] = {}
                 
-                # Покупка имеет максимальный вес
-                self.feedback_data["user_preferences"][user_id][item_uuid] = 2.0
+                if item_uuid not in self.feedback_data["user_preferences"][user_id]:
+                    self.feedback_data["user_preferences"][user_id][item_uuid] = 0
+                
+                # Увеличиваем счетчик предпочтения
+                self.feedback_data["user_preferences"][user_id][item_uuid] += 1.0
             
             # Сохраняем данные
             self._save_feedback()
@@ -175,9 +272,31 @@ class FeedbackSystem:
         Returns:
             float: Коэффициент усиления (от 0 до 0.5)
         """
-        clicks = self.feedback_data["clicks"].get(item_uuid, 0)
-        favorites = self.feedback_data["favorites"].get(item_uuid, 0)
-        purchases = self.feedback_data["purchases"].get(item_uuid, 0)
+        # Получаем данные о кликах, избранном и покупках
+        clicks_data = self.feedback_data["clicks"].get(item_uuid, 0)
+        favorites_data = self.feedback_data["favorites"].get(item_uuid, 0)
+        purchases_data = self.feedback_data["purchases"].get(item_uuid, 0)
+        
+        # Обрабатываем клики - могут быть словарем или числом
+        clicks = 0
+        if isinstance(clicks_data, dict):
+            clicks = len(clicks_data)  # Количество пользователей, кликнувших на элемент
+        else:
+            clicks = clicks_data  # Прямое значение счетчика
+        
+        # Обрабатываем избранное - может быть словарем или числом
+        favorites = 0
+        if isinstance(favorites_data, dict):
+            favorites = len(favorites_data)  # Количество пользователей, добавивших в избранное
+        else:
+            favorites = favorites_data  # Прямое значение счетчика
+        
+        # Обрабатываем покупки - могут быть словарем или числом
+        purchases = 0
+        if isinstance(purchases_data, dict):
+            purchases = len(purchases_data)  # Количество пользователей, купивших элемент
+        else:
+            purchases = purchases_data  # Прямое значение счетчика
         
         # Вычисляем общую популярность (с весами)
         popularity = clicks * 0.01 + favorites * 0.2 + purchases * 0.5
@@ -214,6 +333,85 @@ class FeedbackSystem:
             Dict[str, float]: Маппинг UUID -> вес
         """
         return self.feedback_data["user_preferences"].get(user_id, {})
+
+    def get_user_feedback(self, user_id: str) -> Dict[str, Dict[str, float]]:
+        """
+        Получает данные обратной связи для конкретного пользователя.
+        
+        Args:
+            user_id: ID пользователя
+            
+        Returns:
+            Dict: Словарь с данными обратной связи пользователя
+        """
+        with self.lock:
+            result = {}
+            
+            # Проверяем наличие пользователя в данных
+            if user_id not in self.feedback_data["user_preferences"]:
+                return {}
+            
+            # Создаем категории обратной связи для пользователя
+            result["clicks"] = {}
+            result["favorites"] = {}
+            result["purchases"] = {}
+            
+            # Собираем клики
+            for item_uuid, item_data in self.feedback_data["user_preferences"][user_id].items():
+                if item_uuid in self.feedback_data["clicks"]:
+                    result["clicks"][item_uuid] = item_data
+                    
+            # Собираем избранное
+            for item_uuid in self.feedback_data["favorites"]:
+                if user_id in self.feedback_data["favorites_users"].get(item_uuid, []):
+                    result["favorites"][item_uuid] = 1.0
+                    
+            # Собираем покупки
+            for item_uuid in self.feedback_data["purchases"]:
+                if user_id in self.feedback_data["purchases_users"].get(item_uuid, []):
+                    result["purchases"][item_uuid] = 1.0
+                    
+            return result
+
+    def record_view(self, item_uuid: str, user_id: Optional[str] = None, value: float = 0.5):
+        """
+        Регистрирует просмотр элемента.
+        
+        Args:
+            item_uuid: UUID элемента
+            user_id: ID пользователя (опционально)
+            value: Значение обратной связи (от 0 до 1), по умолчанию 0.5
+        """
+        with self.lock:
+            # Проверяем и инициализируем словарь просмотров, если он не существует
+            if "views" not in self.feedback_data:
+                self.feedback_data["views"] = {}
+            
+            # Инициализируем счетчик просмотров для элемента
+            if item_uuid not in self.feedback_data["views"]:
+                self.feedback_data["views"][item_uuid] = {}
+            
+            # Если указан пользователь, сохраняем данные о его просмотре
+            if user_id:
+                # Проверяем, существует ли структура для сохранения данных о пользователе
+                if isinstance(self.feedback_data["views"][item_uuid], dict):
+                    # Увеличиваем счетчик просмотров пользователя для этого элемента
+                    self.feedback_data["views"][item_uuid][user_id] = value
+                else:
+                    # Если структура не соответствует ожидаемой, создаем новую
+                    self.feedback_data["views"][item_uuid] = {user_id: value}
+                
+                # Обновляем предпочтения пользователя
+                if user_id not in self.feedback_data["user_preferences"]:
+                    self.feedback_data["user_preferences"][user_id] = {}
+                
+                # Добавляем небольшой вес для просмотра (меньше, чем для клика или избранного)
+                # Если элемент уже есть в предпочтениях, немного увеличиваем его вес
+                current_pref = self.feedback_data["user_preferences"][user_id].get(item_uuid, 0)
+                self.feedback_data["user_preferences"][user_id][item_uuid] = min(current_pref + 0.05, 1.0)
+            
+            # Сохраняем данные
+            self._save_feedback()
 
 
 # ---------------------------------------------------------------------------
@@ -579,12 +777,37 @@ class VectorIndex:
         active_count = sum(1 for meta in self.metadata.values() if not meta.get("deleted", False))
         
         # Собираем статистику обратной связи
+        # Считаем общее количество кликов с учетом новой структуры
+        total_clicks = 0
+        for item_uuid, click_data in self.feedback.feedback_data["clicks"].items():
+            if isinstance(click_data, dict):
+                # Новая структура: используем _total или считаем количество пользователей
+                if "_total" in click_data:
+                    total_clicks += click_data["_total"]
+                else:
+                    # Подсчитываем уникальных пользователей, исключая служебные ключи
+                    total_clicks += sum(1 for k in click_data.keys() if not k.startswith("_"))
+            elif isinstance(click_data, int):
+                # Старая структура: просто число
+                total_clicks += click_data
+        
+        # Считаем общее количество просмотров
+        total_views = 0
+        for item_uuid, view_data in self.feedback.feedback_data["views"].items():
+            if isinstance(view_data, dict):
+                total_views += len(view_data)  # Количество уникальных пользователей
+        
         feedback_stats = {
-            "total_clicks": sum(self.feedback.feedback_data["clicks"].values()),
+            "total_clicks": total_clicks,
+            "total_views": total_views,
             "total_favorites": sum(self.feedback.feedback_data["favorites"].values()),
             "total_purchases": sum(self.feedback.feedback_data["purchases"].values()),
             "users_with_preferences": len(self.feedback.feedback_data["user_preferences"])
         }
+        
+        # Подсчитываем общее количество взаимодействий (клики + избранное + покупки)
+        total_interactions = feedback_stats["total_clicks"] + feedback_stats["total_favorites"] + feedback_stats["total_purchases"]
+        feedback_stats["total_interactions"] = total_interactions
         
         return {
             "total_items": self.index.ntotal,
@@ -600,7 +823,7 @@ class VectorIndex:
         
         Args:
             item_uuid: UUID элемента
-            feedback_type: Тип обратной связи ("click", "favorite", "purchase")
+            feedback_type: Тип обратной связи ("click", "favorite", "purchase", "view")
             user_id: ID пользователя (опционально)
             value: Значение обратной связи (для числовых оценок)
         """
@@ -610,9 +833,11 @@ class VectorIndex:
         if feedback_type == "click":
             self.feedback.record_click(item_uuid, user_id)
         elif feedback_type == "favorite":
-            self.feedback.record_favorite(item_uuid, user_id)
+            self.feedback.record_favorite(item_uuid, user_id, value)
         elif feedback_type == "purchase":
             self.feedback.record_purchase(item_uuid, user_id)
+        elif feedback_type == "view":
+            self.feedback.record_view(item_uuid, user_id, value)
         elif feedback_type == "relation":
             # В этом случае value должен быть UUID связанного элемента
             if isinstance(value, str) and value in self.metadata:

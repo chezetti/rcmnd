@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/header";
@@ -11,6 +11,28 @@ import { Heart, Clock, Activity } from "lucide-react";
 import apiService from "@/lib/api";
 import useStore from "@/lib/store";
 import { NFTItem } from "@/lib/store";
+
+// Компонент унифицированной кнопки таба для многократного использования
+interface TabButtonProps {
+  isActive: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}
+
+function TabButton({ isActive, onClick, icon, children }: TabButtonProps) {
+  return (
+    <Button
+      variant={isActive ? "default" : "outline"}
+      onClick={onClick}
+      className={`font-medium ${isActive ? "border-2 border-primary" : ""}`}
+      size="lg"
+    >
+      {icon}
+      {children}
+    </Button>
+  );
+}
 
 export default function DashboardPage() {
   const { userPrefs } = useStore();
@@ -23,7 +45,13 @@ export default function DashboardPage() {
     total_clicks: 0,
     total_purchases: 0,
     users_with_preferences: 0,
+    total_interactions: 0,
   });
+  const [favoritesParams, setFavoritesParams] = useState({
+    limit: 20,
+    offset: 0,
+  });
+  const [hasMoreFavorites, setHasMoreFavorites] = useState(true);
 
   // Get user ID, if not available use a fallback
   const userId = userPrefs.userId || "guest-user";
@@ -44,6 +72,9 @@ export default function DashboardPage() {
         return response.data;
       },
       enabled: !!userId,
+      // Disable caching to always fetch fresh data on navigation
+      staleTime: 0,
+      refetchOnMount: "always",
     });
 
   // Fetch stats for the dashboard
@@ -69,6 +100,82 @@ export default function DashboardPage() {
         };
       }
     },
+    // Disable caching to always fetch fresh data
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
+  // Fetch favorite items with pagination from backend API
+  const { data: favItems, isLoading: isLoadingFavorites } = useQuery({
+    queryKey: ["favorites", favoritesParams, userPrefs.userId],
+    queryFn: async () => {
+      try {
+        // Only fetch from API if user is logged in (has userId)
+        if (userPrefs.userId) {
+          // Fetch favorites directly from the backend API
+          const response = await apiService.getUserFavorites(favoritesParams);
+          return response.data;
+        }
+        // Fallback to local favorites when not logged in
+        else if (userPrefs.favoritedItems.length > 0) {
+          // Calculate items to fetch based on pagination
+          const { offset, limit } = favoritesParams;
+
+          // Get subset of favorited items for current page
+          const itemsToFetch = userPrefs.favoritedItems.slice(
+            offset,
+            offset + limit
+          );
+
+          if (itemsToFetch.length === 0) {
+            return { results: [], total: userPrefs.favoritedItems.length };
+          }
+
+          // Create placeholder items with real IDs as a fallback
+          const items = createDummyFavorites(itemsToFetch);
+
+          return {
+            results: items,
+            total: userPrefs.favoritedItems.length,
+          };
+        }
+        return { results: [], total: 0 };
+      } catch (error) {
+        console.error("Failed to fetch favorite items", error);
+
+        // If the API fails, fallback to locally stored favorites
+        if (userPrefs.favoritedItems.length > 0) {
+          // Calculate items to fetch based on pagination
+          const { offset, limit } = favoritesParams;
+
+          // Get subset of favorited items for current page
+          const itemsToFetch = userPrefs.favoritedItems.slice(
+            offset,
+            offset + limit
+          );
+
+          if (itemsToFetch.length === 0) {
+            return { results: [], total: userPrefs.favoritedItems.length };
+          }
+
+          // Create placeholder items with real IDs as a fallback
+          const items = createDummyFavorites(itemsToFetch);
+
+          return {
+            results: items,
+            total: userPrefs.favoritedItems.length,
+          };
+        }
+        return { results: [], total: 0 };
+      }
+    },
+    enabled: activeTab === "favorites",
+    // Disable caching to always fetch fresh data on navigation
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   // Update stats when API stats are loaded
@@ -82,6 +189,9 @@ export default function DashboardPage() {
           apiStats.feedback?.total_clicks || userPrefs.clickedItems.length,
         total_purchases: apiStats.feedback?.total_purchases || 0,
         users_with_preferences: apiStats.feedback?.users_with_preferences || 0,
+        total_interactions:
+          apiStats.feedback?.total_interactions ||
+          userPrefs.clickedItems.length + userPrefs.favoritedItems.length,
       });
     }
   }, [
@@ -90,7 +200,7 @@ export default function DashboardPage() {
     userPrefs.clickedItems.length,
   ]);
 
-  // Создаем заглушки для любимых элементов
+  // Create fallback dummy items for favorites (used only if API fails)
   const createDummyFavorites = (ids: string[]) => {
     const dummyItems: NFTItem[] = [];
     const categories = ["art", "collectible", "game", "metaverse", "defi"];
@@ -109,32 +219,16 @@ export default function DashboardPage() {
         categories: [category],
         styles: [style],
         tags: tags,
+        creator: "Unknown Artist",
+        image_url: `https://api.dicebear.com/6.x/shapes/svg?seed=${id}`,
+        category: category,
+        currency: "ETH",
+        price: 0.1 + Math.random() * 2,
       });
     });
 
     return dummyItems;
   };
-
-  // Fetch favorite items
-  useEffect(() => {
-    const fetchFavoriteItems = async () => {
-      try {
-        if (userPrefs.favoritedItems.length) {
-          // В реальном приложении мы бы запрашивали детали для каждого favorites элемента по ID
-          // Здесь создаем заглушки с реальными ID
-          const items = createDummyFavorites(userPrefs.favoritedItems);
-          setFavoriteItems(items);
-        } else {
-          setFavoriteItems([]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch favorite items", error);
-        setFavoriteItems([]);
-      }
-    };
-
-    fetchFavoriteItems();
-  }, [userPrefs.favoritedItems]);
 
   // Set personalized items when recommendations are loaded
   useEffect(() => {
@@ -142,6 +236,52 @@ export default function DashboardPage() {
       setPersonalizedItems(recommendations.results);
     }
   }, [recommendations]);
+
+  // Update favorite items when data is loaded
+  useEffect(() => {
+    if (favItems?.results) {
+      if (favoritesParams.offset === 0) {
+        // First page - replace all items
+        setFavoriteItems(favItems.results);
+      } else {
+        // Subsequent pages - append new items
+        setFavoriteItems((prev) => {
+          const newItems = [...prev];
+          favItems.results.forEach((item: NFTItem) => {
+            if (!newItems.some((existing) => existing.uuid === item.uuid)) {
+              newItems.push(item);
+            }
+          });
+          return newItems;
+        });
+      }
+
+      // Update hasMoreFavorites status
+      setHasMoreFavorites(
+        favoritesParams.offset + favoritesParams.limit < (favItems.total || 0)
+      );
+    }
+  }, [favItems, favoritesParams.offset, favoritesParams.limit]);
+
+  // Handle load more favorites
+  const handleLoadMoreFavorites = useCallback(() => {
+    if (!isLoadingFavorites && hasMoreFavorites) {
+      setFavoritesParams((prev) => ({
+        ...prev,
+        offset: prev.offset + prev.limit,
+      }));
+    }
+  }, [isLoadingFavorites, hasMoreFavorites]);
+
+  // Reset pagination when switching to favorites tab
+  useEffect(() => {
+    if (activeTab === "favorites") {
+      setFavoritesParams({
+        limit: 20,
+        offset: 0,
+      });
+    }
+  }, [activeTab]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -191,7 +331,11 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {stats.total_clicks || userPrefs.clickedItems.length}
+                {isLoadingStats ? (
+                  <span className="text-muted animate-pulse">...</span>
+                ) : (
+                  stats.total_interactions || userPrefs.clickedItems.length
+                )}
               </div>
             </CardContent>
           </Card>
@@ -200,24 +344,20 @@ export default function DashboardPage() {
         {/* Tabs for different sections */}
         <div className="mb-8">
           <div className="flex space-x-2">
-            <Button
-              variant={activeTab === "recommended" ? "default" : "outline"}
+            <TabButton
+              isActive={activeTab === "recommended"}
               onClick={() => setActiveTab("recommended")}
-              className="font-medium"
-              size="lg"
+              icon={<Activity className="h-4 w-4 mr-2" />}
             >
-              <Activity className="h-4 w-4 mr-2" />
               Recommended for You
-            </Button>
-            <Button
-              variant={activeTab === "favorites" ? "default" : "outline"}
+            </TabButton>
+            <TabButton
+              isActive={activeTab === "favorites"}
               onClick={() => setActiveTab("favorites")}
-              className="font-medium"
-              size="lg"
+              icon={<Heart className="h-4 w-4 mr-2" />}
             >
-              <Heart className="h-4 w-4 mr-2" />
               Your Favorites
-            </Button>
+            </TabButton>
           </div>
         </div>
 
@@ -225,12 +365,12 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold">Personalized Recommendations</h2>
             <p className="text-muted-foreground">
-              Based on your browsing history and interactions.
+              Discover NFTs tailored to your preferences.
             </p>
             <NFTGrid
               items={personalizedItems}
               isLoading={isLoadingRecommendations}
-              emptyMessage="No personalized recommendations yet. Explore more NFTs to get recommendations."
+              emptyMessage="No personalized recommendations found. Try exploring more NFTs to improve your recommendations."
               layout="masonry"
             />
           </div>
@@ -240,29 +380,26 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">
               NFTs you&apos;ve added to your favorites collection.
             </p>
-            {favoriteItems.length > 0 ? (
-              <NFTGrid
-                items={favoriteItems}
-                isLoading={false}
-                emptyMessage="You haven't added any NFTs to your favorites yet."
-                layout="masonry"
-              />
-            ) : (
-              <div className="text-center py-16 border border-dashed border-border rounded-xl">
-                <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No favorites yet</h3>
+            {favoriteItems.length === 0 && !isLoadingFavorites ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Heart className="h-16 w-16 text-muted-foreground mb-4" />
+                <h2 className="text-2xl font-semibold mb-2">
+                  No favorites yet
+                </h2>
                 <p className="text-muted-foreground mb-6">
                   You haven&apos;t added any NFTs to your favorites collection
                   yet.
                 </p>
-                <Button
-                  onClick={() => (window.location.href = "/")}
-                  variant="outline"
-                  size="lg"
-                >
-                  Explore NFTs
-                </Button>
               </div>
+            ) : (
+              <NFTGrid
+                items={favoriteItems}
+                isLoading={isLoadingFavorites}
+                emptyMessage="No favorites found."
+                onLoadMore={handleLoadMoreFavorites}
+                hasMore={hasMoreFavorites}
+                layout="masonry"
+              />
             )}
           </div>
         )}

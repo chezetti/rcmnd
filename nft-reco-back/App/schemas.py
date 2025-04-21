@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, EmailStr
 
 
 class RecommendResponseItem(BaseModel):
@@ -101,6 +101,7 @@ class ItemResponse(BaseModel):
     categories: Optional[List[str]] = None
     attributes: Optional[Dict[str, Any]] = None
     creation_date: Optional[str] = None
+    is_favorite: Optional[bool] = Field(None, description="Флаг, указывающий добавлен ли айтем в избранное текущего пользователя")
     
     class Config:
         schema_extra = {
@@ -179,3 +180,113 @@ class ItemMetadata(BaseModel):
                 }
             }
         }
+
+
+# Authentication schemas
+class UserRole(str, Enum):
+    """Роли пользователей в системе."""
+    USER = "user"
+    CREATOR = "creator"
+    ADMIN = "admin"
+
+
+class UserBase(BaseModel):
+    """Базовая модель данных пользователя."""
+    username: str = Field(..., min_length=3, max_length=50, description="Имя пользователя")
+    email: EmailStr = Field(..., description="Адрес электронной почты")
+    full_name: Optional[str] = Field(None, description="Полное имя пользователя")
+
+
+class UserCreate(UserBase):
+    """Данные для создания нового пользователя."""
+    password: str = Field(..., min_length=8, description="Пароль пользователя")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "johndoe",
+                "email": "john.doe@example.com",
+                "full_name": "John Doe",
+                "password": "securepassword123"
+            }
+        }
+
+
+class UserLogin(BaseModel):
+    """Данные для входа пользователя."""
+    username: str = Field(..., description="Имя пользователя или адрес электронной почты")
+    password: str = Field(..., description="Пароль пользователя")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "johndoe",
+                "password": "securepassword123"
+            }
+        }
+
+
+class UserResponse(UserBase):
+    """Модель ответа с данными пользователя."""
+    id: str = Field(..., description="Уникальный идентификатор пользователя")
+    role: UserRole = Field(default=UserRole.USER, description="Роль пользователя")
+    created_at: datetime = Field(..., description="Дата создания аккаунта")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "username": "johndoe",
+                "email": "john.doe@example.com",
+                "full_name": "John Doe",
+                "role": "user",
+                "created_at": "2023-05-20T12:34:56"
+            }
+        }
+
+
+class Token(BaseModel):
+    """Модель токена доступа."""
+    access_token: str = Field(..., description="Токен доступа JWT")
+    token_type: str = Field(default="bearer", description="Тип токена")
+    expires_in: int = Field(..., description="Срок действия токена в секундах")
+    user: UserResponse = Field(..., description="Информация о пользователе")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "expires_in": 3600,
+                "user": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "username": "johndoe",
+                    "email": "john.doe@example.com",
+                    "full_name": "John Doe",
+                    "role": "user",
+                    "created_at": "2023-05-20T12:34:56"
+                }
+            }
+        }
+
+
+class TokenData(BaseModel):
+    """Данные, извлекаемые из токена."""
+    sub: str = Field(..., description="Идентификатор пользователя")
+    exp: datetime = Field(..., description="Время истечения срока действия токена")
+    role: UserRole = Field(..., description="Роль пользователя")
+
+
+class ChangePasswordRequest(BaseModel):
+    """Запрос на изменение пароля."""
+    current_password: str = Field(..., description="Текущий пароль")
+    new_password: str = Field(..., min_length=8, description="Новый пароль")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "current_password": "oldpassword123",
+                "new_password": "newpassword456"
+            }
+        }
+

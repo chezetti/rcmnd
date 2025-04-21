@@ -3,10 +3,18 @@ import { create } from "zustand";
 // Define types for our NFT items
 export interface NFTItem {
   uuid: string;
-  score?: number;
-  name?: string;
+  name: string;
   description?: string;
+  creator: string;
+  image_url: string;
+  category: string;
+  style?: string;
   tags?: string[];
+  price: number;
+  currency: string;
+  created_at?: string;
+  updated_at?: string;
+  score?: number;
   styles?: string[];
   categories?: string[];
 }
@@ -19,6 +27,22 @@ interface UserPreferences {
   diversify: boolean;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  created_at: string;
+}
+
+interface AuthState {
+  isAuthenticated: boolean;
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+}
+
 interface AppState {
   // Items state
   featuredItems: NFTItem[];
@@ -29,6 +53,9 @@ interface AppState {
 
   // User preferences
   userPrefs: UserPreferences;
+
+  // Authentication state
+  auth: AuthState;
 
   // Actions
   setFeaturedItems: (items: NFTItem[]) => void;
@@ -44,6 +71,12 @@ interface AppState {
   setSearchMode: (mode: "visual" | "textual" | "balanced") => void;
   setDiversify: (diversify: boolean) => void;
   setUserPrefs: (prefs: Partial<UserPreferences>) => void;
+
+  // Authentication actions
+  loginSuccess: (user: User, token: string) => void;
+  logout: () => void;
+  setAuthLoading: (loading: boolean) => void;
+  setAuthError: (error: string | null) => void;
 }
 
 // Create store
@@ -61,6 +94,14 @@ const useStore = create<AppState>((set) => ({
     clickedItems: [],
     searchMode: "balanced",
     diversify: true,
+  },
+
+  // Authentication state
+  auth: {
+    isAuthenticated: false,
+    user: null,
+    loading: false,
+    error: null,
   },
 
   // Actions
@@ -92,12 +133,18 @@ const useStore = create<AppState>((set) => ({
     }),
 
   recordClick: (itemId) =>
-    set((state) => ({
-      userPrefs: {
-        ...state.userPrefs,
-        clickedItems: [...state.userPrefs.clickedItems, itemId],
-      },
-    })),
+    set((state) => {
+      // Only add the item if it's not already in the clicked items list
+      if (!state.userPrefs.clickedItems.includes(itemId)) {
+        return {
+          userPrefs: {
+            ...state.userPrefs,
+            clickedItems: [...state.userPrefs.clickedItems, itemId],
+          },
+        };
+      }
+      return state; // Return unchanged state if item was already clicked
+    }),
 
   setSearchMode: (mode) =>
     set((state) => ({
@@ -112,6 +159,58 @@ const useStore = create<AppState>((set) => ({
   setUserPrefs: (prefs) =>
     set((state) => ({
       userPrefs: { ...state.userPrefs, ...prefs },
+    })),
+
+  // Authentication actions
+  loginSuccess: (user, token) => {
+    // Save token to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_token", token);
+    }
+    // Update state
+    set((state) => ({
+      auth: {
+        ...state.auth,
+        isAuthenticated: true,
+        user,
+        loading: false,
+        error: null,
+      },
+      userPrefs: {
+        ...state.userPrefs,
+        userId: user.id,
+      },
+    }));
+  },
+
+  logout: () => {
+    // Remove token from localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token");
+    }
+    // Reset auth state
+    set((state) => ({
+      auth: {
+        ...state.auth,
+        isAuthenticated: false,
+        user: null,
+        error: null,
+      },
+      userPrefs: {
+        ...state.userPrefs,
+        userId: undefined,
+      },
+    }));
+  },
+
+  setAuthLoading: (loading) =>
+    set((state) => ({
+      auth: { ...state.auth, loading },
+    })),
+
+  setAuthError: (error) =>
+    set((state) => ({
+      auth: { ...state.auth, error },
     })),
 }));
 
