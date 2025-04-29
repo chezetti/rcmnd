@@ -515,9 +515,8 @@ class VectorIndex:
         Args:
             vectors: Векторы для обучения
         """
-        if isinstance(self.index, faiss.IndexIVFFlat) and not self.index.is_trained:
-            print("Training IVF index...")
-            self.index.train(vectors)
+        print("Training IVF index...")
+        self.index.train(vectors)
 
     def add(self, vector: np.ndarray, metadata: Dict[str, Any]) -> str:
         """
@@ -556,10 +555,9 @@ class VectorIndex:
         norm_vector = vector / np.linalg.norm(vector, axis=1, keepdims=True)
         norm_vector = norm_vector.astype(np.float32)
         
-        # Временно закомментировано для решения проблемы
         # Обучаем IVF индекс, если нужно
-        # if isinstance(self.index, faiss.IndexIVFFlat) and not self.index.is_trained:
-        #     self._train_ivf_index_if_needed(norm_vector)
+        if isinstance(self.index, faiss.IndexIVFFlat) and not self.index.is_trained:
+            self._train_ivf_index_if_needed(norm_vector)
         
         # Добавляем вектор в индекс
         idx = self.index.ntotal

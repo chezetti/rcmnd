@@ -77,7 +77,7 @@ MODEL_CACHE_DIR: Path = PERSIST_DIR / "models"
 MODEL_CACHE_DIR.mkdir(exist_ok=True)
 
 # Тип индекса FAISS - можно переключаться между разными типами для разного баланса скорости/точности
-FAISS_INDEX_TYPE = "Flat"  # Можно выбрать из: "Flat", "IVF100,Flat", "HNSW", "PQ"
+FAISS_INDEX_TYPE = "IVF100,Flat"  # Можно выбрать из: "Flat", "IVF100,Flat", "HNSW", "PQ"
 
 # ---------------------------------------------------------------------------
 # Feedback configuration

@@ -183,7 +183,7 @@ class CLIPEncoder:
                     images.append(Image.open(io.BytesIO(img_path)))
                     
             # Process images using the image processor
-            inputs = self.image_processor(images=images, text=None, return_tensors="pt")
+            inputs = self.image_processor(images=images, return_tensors="pt")
             inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
             
             with torch.no_grad():
@@ -425,7 +425,8 @@ class AdvancedEncoder:
             if isinstance(img_bytes, bytes):
                 image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
                 if self.clip_encoder.image_processor is not None:
-                    inputs = self.clip_encoder.image_processor(images=[image], text=None, return_tensors="pt")
+                    # Убираем параметр text=None, который вызывает предупреждение
+                    inputs = self.clip_encoder.image_processor(images=[image], return_tensors="pt")
                     inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
                     
                     model = getattr(self.clip_encoder, 'model', None)
