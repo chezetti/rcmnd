@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,16 +15,7 @@ import apiService from "@/lib/api";
 import useStore from "@/lib/store";
 import { NFTItem } from "@/lib/store";
 import { useParams } from "next/navigation";
-
-// Simple 3D model for demonstration
-function Box(props: React.ComponentProps<"mesh">) {
-  return (
-    <mesh {...props} rotation={[0, Math.PI / 4, 0]}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={"hotpink"} />
-    </mesh>
-  );
-}
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ItemPage() {
   const router = useRouter();
@@ -38,10 +27,10 @@ export default function ItemPage() {
       ? params.id[0]
       : "";
 
-  const { userPrefs, toggleFavorite, recordClick } = useStore();
+  const { userPrefs } = useStore();
   const [isLiked, setIsLiked] = useState(false);
   const [similarItems, setSimilarItems] = useState<NFTItem[]>([]);
-  const [show3D, setShow3D] = useState(false);
+  const { toast } = useToast();
 
   // Fetch NFT details
   const {
@@ -63,7 +52,10 @@ export default function ItemPage() {
     queryFn: async () => {
       // Create form data with the item ID for recommendation
       const formData = new FormData();
-      formData.append("description", `Similar to item ${itemId}`);
+      formData.append(
+        "description",
+        item?.description || `Similar to item ${itemId}`
+      );
       formData.append("top_k", "6");
       formData.append("diversify", "true");
       if (userPrefs.userId) {
@@ -76,31 +68,10 @@ export default function ItemPage() {
     enabled: !!item && !!itemId, // Only fetch when item is loaded
   });
 
-  // Update like status based on user preferences
+  // Update like status based on user favorites from backend
   useEffect(() => {
-    if (itemId) {
-      setIsLiked(userPrefs.favoritedItems.includes(itemId));
-    }
-  }, [itemId, userPrefs.favoritedItems]);
-
-  // Record click on visit
-  useEffect(() => {
-    if (itemId) {
-      // Always record the click in the frontend store
-      recordClick(itemId);
-
-      // Submit view feedback to the API (will work even without userId)
-      apiService
-        .submitFeedback({
-          item_uuid: itemId,
-          user_id: userPrefs.userId,
-          feedback_type: "view",
-        })
-        .catch((error) => {
-          console.error("Failed to submit view feedback:", error);
-        });
-    }
-  }, [itemId, userPrefs.userId, recordClick]);
+    setIsLiked(item?.is_favorite || false);
+  }, [item?.is_favorite]);
 
   // Set similar items when recommendations are loaded
   useEffect(() => {
@@ -114,8 +85,15 @@ export default function ItemPage() {
 
   // Handle like button click
   const handleLike = async () => {
-    setIsLiked(!isLiked);
-    toggleFavorite(itemId);
+    if (!userPrefs.userId) {
+      toast({
+        title: "Authorization required",
+        description: "Please log in to add NFT to favorites",
+        variant: "destructive",
+      });
+
+      return;
+    }
 
     try {
       await apiService.submitFeedback({
@@ -124,6 +102,8 @@ export default function ItemPage() {
         feedback_type: "favorite",
         value: isLiked ? 0 : 1,
       });
+      // After successful API call, update local state
+      setIsLiked(!isLiked);
     } catch (error) {
       console.error("Failed to submit feedback", error);
     }
@@ -182,48 +162,17 @@ export default function ItemPage() {
           <div className="flex justify-center items-start">
             <Card className="overflow-hidden rounded-lg border w-full max-w-md">
               <CardContent className="p-0">
-                {show3D ? (
-                  <div className="aspect-square relative">
-                    <Canvas className="bg-black/5 dark:bg-white/5">
-                      <ambientLight intensity={0.5} />
-                      <spotLight
-                        position={[10, 10, 10]}
-                        angle={0.15}
-                        penumbra={1}
-                      />
-                      <Box position={[0, 0, 0]} />
-                      <OrbitControls />
-                    </Canvas>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm"
-                      onClick={() => setShow3D(false)}
-                    >
-                      View 2D
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="aspect-square relative">
-                    <Image
-                      src={`https://picsum.photos/seed/${itemId}/512/512`}
-                      alt={item.name || "NFT Image"}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      priority
-                      unoptimized
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm"
-                      onClick={() => setShow3D(true)}
-                    >
-                      View 3D
-                    </Button>
-                  </div>
-                )}
+                <div className="aspect-square relative">
+                  <Image
+                    src={`https://picsum.photos/seed/${itemId}/512/512`}
+                    alt={item.name || "NFT Image"}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority
+                    unoptimized
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -298,16 +247,13 @@ export default function ItemPage() {
               {Array(5)
                 .fill(0)
                 .map((_, index) => (
-                  <Skeleton key={index} className="aspect-square rounded-lg" />
+                  <div key={index} className="aspect-square">
+                    <Skeleton className="w-full h-full rounded-lg" />
+                  </div>
                 ))}
             </div>
           ) : similarItems.length > 0 ? (
-            <NFTGrid
-              items={similarItems}
-              layout="grid"
-              showScores={true}
-              emptyMessage="No similar items found"
-            />
+            <NFTGrid items={similarItems} />
           ) : (
             <p className="text-muted-foreground">No similar items found</p>
           )}

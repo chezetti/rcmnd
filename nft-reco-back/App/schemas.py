@@ -20,6 +20,7 @@ class RecommendResponseItem(BaseModel):
     popularity_boost: Optional[float] = None
     user_boost: Optional[float] = None
     diversity_boost: Optional[float] = None
+    is_favorite: Optional[bool] = None
     
     class Config:
         schema_extra = {
@@ -32,7 +33,8 @@ class RecommendResponseItem(BaseModel):
                 "styles": ["abstract", "futuristic"],
                 "categories": ["art", "collectible"],
                 "popularity_boost": 0.1,
-                "diversity_boost": 0.05
+                "diversity_boost": 0.05,
+                "is_favorite": False
             }
         }
 

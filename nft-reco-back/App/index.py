@@ -113,15 +113,11 @@ class FeedbackSystem:
                 # Сохраняем клик пользователя
                 self.feedback_data["clicks"][item_uuid][user_id] = True
                 
-                # Обновляем предпочтения пользователя
-                if user_id not in self.feedback_data["user_preferences"]:
-                    self.feedback_data["user_preferences"][user_id] = {}
-                
-                if item_uuid not in self.feedback_data["user_preferences"][user_id]:
-                    self.feedback_data["user_preferences"][user_id][item_uuid] = 0
-                
-                # Увеличиваем счетчик взаимодействия пользователя
-                self.feedback_data["user_preferences"][user_id][item_uuid] += 0.1
+                # Обновляем предпочтения пользователя только если они уже существуют
+                if user_id in self.feedback_data["user_preferences"]:
+                    # Увеличиваем счетчик взаимодействия пользователя только для существующих записей
+                    if item_uuid in self.feedback_data["user_preferences"][user_id]:
+                        self.feedback_data["user_preferences"][user_id][item_uuid] += 0.1
             
             # Сохраняем данные
             self._save_feedback()
@@ -150,47 +146,48 @@ class FeedbackSystem:
                 if item_uuid not in self.feedback_data["favorites_users"]:
                     self.feedback_data["favorites_users"][item_uuid] = []
                 
+                # Инициализируем предпочтения пользователя, если их нет
+                if user_id not in self.feedback_data["user_preferences"]:
+                    self.feedback_data["user_preferences"][user_id] = {}
+                
                 # Добавление в избранное (value > 0)
                 if value > 0:
                     # Добавляем пользователя в список, если его там еще нет
                     if user_id not in self.feedback_data["favorites_users"][item_uuid]:
                         self.feedback_data["favorites_users"][item_uuid].append(user_id)
-                        
-                        # Увеличиваем счетчик избранного для элемента
-                        if item_uuid not in self.feedback_data["favorites"]:
-                            self.feedback_data["favorites"][item_uuid] = 0
-                        self.feedback_data["favorites"][item_uuid] += 1
+                    
+                    # Увеличиваем счетчик избранного для элемента
+                    if item_uuid not in self.feedback_data["favorites"]:
+                        self.feedback_data["favorites"][item_uuid] = 0
+                    self.feedback_data["favorites"][item_uuid] += 1
                     
                     # Обновляем предпочтения пользователя
-                    if user_id not in self.feedback_data["user_preferences"]:
-                        self.feedback_data["user_preferences"][user_id] = {}
-                    
-                    # Устанавливаем значение 1.0 вместо 0.5, чтобы гарантировать, что значение > 0
                     self.feedback_data["user_preferences"][user_id][item_uuid] = 1.0
                     
                     # Debugs
                     print(f"DEBUG: Added item {item_uuid} to favorites for user {user_id}")
                     print(f"DEBUG: User preferences value: {self.feedback_data['user_preferences'][user_id][item_uuid]}")
                     print(f"DEBUG: favorites_users: {self.feedback_data['favorites_users'][item_uuid]}")
+                    print(f"DEBUG: favorites count: {self.feedback_data['favorites'][item_uuid]}")
                 
                 # Удаление из избранного (value == 0)
                 else:
                     # Удаляем пользователя из списка, если он там есть
                     if user_id in self.feedback_data["favorites_users"][item_uuid]:
                         self.feedback_data["favorites_users"][item_uuid].remove(user_id)
-                        
-                        # Уменьшаем счетчик избранного для элемента
-                        if item_uuid in self.feedback_data["favorites"]:
-                            self.feedback_data["favorites"][item_uuid] = max(0, self.feedback_data["favorites"][item_uuid] - 1)
+                    
+                    # Уменьшаем счетчик избранного для элемента
+                    if item_uuid in self.feedback_data["favorites"]:
+                        self.feedback_data["favorites"][item_uuid] = max(0, self.feedback_data["favorites"][item_uuid] - 1)
                     
                     # Обновляем предпочтения пользователя
-                    if user_id in self.feedback_data["user_preferences"]:
-                        if item_uuid in self.feedback_data["user_preferences"][user_id]:
-                            # Удаляем запись о предпочтении или уменьшаем оценку
-                            self.feedback_data["user_preferences"][user_id][item_uuid] = 0.0
+                    if item_uuid in self.feedback_data["user_preferences"][user_id]:
+                        self.feedback_data["user_preferences"][user_id][item_uuid] = 0.0
                     
                     # Debugs
                     print(f"DEBUG: Removed item {item_uuid} from favorites for user {user_id}")
+                    print(f"DEBUG: favorites_users after removal: {self.feedback_data['favorites_users'].get(item_uuid, [])}")
+                    print(f"DEBUG: favorites count after removal: {self.feedback_data['favorites'].get(item_uuid, 0)}")
             else:
                 # Если пользователь не указан, просто обновляем общий счетчик избранного
                 if item_uuid not in self.feedback_data["favorites"]:
@@ -228,14 +225,17 @@ class FeedbackSystem:
                 if user_id not in self.feedback_data["purchases_users"][item_uuid]:
                     self.feedback_data["purchases_users"][item_uuid].append(user_id)
                 
-                if user_id not in self.feedback_data["user_preferences"]:
-                    self.feedback_data["user_preferences"][user_id] = {}
-                
-                if item_uuid not in self.feedback_data["user_preferences"][user_id]:
-                    self.feedback_data["user_preferences"][user_id][item_uuid] = 0
-                
-                # Увеличиваем счетчик предпочтения
-                self.feedback_data["user_preferences"][user_id][item_uuid] += 1.0
+                # Обновляем предпочтения пользователя только если они уже существуют
+                if user_id in self.feedback_data["user_preferences"]:
+                    # Увеличиваем счетчик взаимодействия пользователя только для существующих записей
+                    if item_uuid in self.feedback_data["user_preferences"][user_id]:
+                        self.feedback_data["user_preferences"][user_id][item_uuid] += 1.0
+                    else:
+                        # Для покупки создаем запись даже если её не было, так как это важное действие
+                        self.feedback_data["user_preferences"][user_id][item_uuid] = 1.0
+                else:
+                    # Для покупки инициализируем предпочтения пользователя
+                    self.feedback_data["user_preferences"][user_id] = {item_uuid: 1.0}
             
             # Сохраняем данные
             self._save_feedback()
@@ -401,14 +401,18 @@ class FeedbackSystem:
                     # Если структура не соответствует ожидаемой, создаем новую
                     self.feedback_data["views"][item_uuid] = {user_id: value}
                 
-                # Обновляем предпочтения пользователя
+                # Обновляем предпочтения пользователя только если элемент уже есть в предпочтениях
+                # или значение просмотра достаточно высокое
                 if user_id not in self.feedback_data["user_preferences"]:
                     self.feedback_data["user_preferences"][user_id] = {}
                 
-                # Добавляем небольшой вес для просмотра (меньше, чем для клика или избранного)
-                # Если элемент уже есть в предпочтениях, немного увеличиваем его вес
-                current_pref = self.feedback_data["user_preferences"][user_id].get(item_uuid, 0)
-                self.feedback_data["user_preferences"][user_id][item_uuid] = min(current_pref + 0.05, 1.0)
+                # Обновляем значение только если элемент уже существует в предпочтениях
+                # или значение просмотра достаточно высокое (больше 0.4)
+                if item_uuid in self.feedback_data["user_preferences"][user_id] or value > 0.4:
+                    current_pref = self.feedback_data["user_preferences"][user_id].get(item_uuid, 0)
+                    # Увеличиваем значение только если оно уже существует
+                    if current_pref > 0:
+                        self.feedback_data["user_preferences"][user_id][item_uuid] = min(current_pref + 0.05, 1.0)
             
             # Сохраняем данные
             self._save_feedback()
@@ -804,7 +808,7 @@ class VectorIndex:
         }
         
         # Подсчитываем общее количество взаимодействий (клики + избранное + покупки)
-        total_interactions = feedback_stats["total_clicks"] + feedback_stats["total_favorites"] + feedback_stats["total_purchases"]
+        total_interactions = feedback_stats["total_clicks"] + feedback_stats["total_favorites"] + feedback_stats["total_purchases"] + feedback_stats["total_views"]
         feedback_stats["total_interactions"] = total_interactions
         
         return {

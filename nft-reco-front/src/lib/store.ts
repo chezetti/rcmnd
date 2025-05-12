@@ -17,6 +17,7 @@ export interface NFTItem {
   score?: number;
   styles?: string[];
   categories?: string[];
+  is_favorite?: boolean;
 }
 
 interface UserPreferences {
@@ -121,13 +122,14 @@ const useStore = create<AppState>((set) => ({
     set((state) => {
       const { favoritedItems } = state.userPrefs;
       const isFavorited = favoritedItems.includes(itemId);
+      const newFavoritedItems = isFavorited
+        ? favoritedItems.filter((id) => id !== itemId)
+        : [...favoritedItems, itemId];
 
       return {
         userPrefs: {
           ...state.userPrefs,
-          favoritedItems: isFavorited
-            ? favoritedItems.filter((id) => id !== itemId)
-            : [...favoritedItems, itemId],
+          favoritedItems: newFavoritedItems,
         },
       };
     }),

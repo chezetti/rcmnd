@@ -119,56 +119,10 @@ export default function DashboardPage() {
           const response = await apiService.getUserFavorites(favoritesParams);
           return response.data;
         }
-        // Fallback to local favorites when not logged in
-        else if (userPrefs.favoritedItems.length > 0) {
-          // Calculate items to fetch based on pagination
-          const { offset, limit } = favoritesParams;
-
-          // Get subset of favorited items for current page
-          const itemsToFetch = userPrefs.favoritedItems.slice(
-            offset,
-            offset + limit
-          );
-
-          if (itemsToFetch.length === 0) {
-            return { results: [], total: userPrefs.favoritedItems.length };
-          }
-
-          // Create placeholder items with real IDs as a fallback
-          const items = createDummyFavorites(itemsToFetch);
-
-          return {
-            results: items,
-            total: userPrefs.favoritedItems.length,
-          };
-        }
+        // No user ID, return empty results
         return { results: [], total: 0 };
       } catch (error) {
         console.error("Failed to fetch favorite items", error);
-
-        // If the API fails, fallback to locally stored favorites
-        if (userPrefs.favoritedItems.length > 0) {
-          // Calculate items to fetch based on pagination
-          const { offset, limit } = favoritesParams;
-
-          // Get subset of favorited items for current page
-          const itemsToFetch = userPrefs.favoritedItems.slice(
-            offset,
-            offset + limit
-          );
-
-          if (itemsToFetch.length === 0) {
-            return { results: [], total: userPrefs.favoritedItems.length };
-          }
-
-          // Create placeholder items with real IDs as a fallback
-          const items = createDummyFavorites(itemsToFetch);
-
-          return {
-            results: items,
-            total: userPrefs.favoritedItems.length,
-          };
-        }
         return { results: [], total: 0 };
       }
     },
@@ -183,52 +137,16 @@ export default function DashboardPage() {
     if (apiStats) {
       setStats({
         total_items: apiStats.active_items || 0,
-        total_favorites:
-          apiStats.feedback?.total_favorites || userPrefs.favoritedItems.length,
-        total_clicks:
-          apiStats.feedback?.total_clicks || userPrefs.clickedItems.length,
+        total_favorites: apiStats.feedback?.total_favorites || 0,
+        total_clicks: apiStats.feedback?.total_clicks || 0,
         total_purchases: apiStats.feedback?.total_purchases || 0,
         users_with_preferences: apiStats.feedback?.users_with_preferences || 0,
         total_interactions:
           apiStats.feedback?.total_interactions ||
-          userPrefs.clickedItems.length + userPrefs.favoritedItems.length,
+          userPrefs.clickedItems.length,
       });
     }
-  }, [
-    apiStats,
-    userPrefs.favoritedItems.length,
-    userPrefs.clickedItems.length,
-  ]);
-
-  // Create fallback dummy items for favorites (used only if API fails)
-  const createDummyFavorites = (ids: string[]) => {
-    const dummyItems: NFTItem[] = [];
-    const categories = ["art", "collectible", "game", "metaverse", "defi"];
-    const styles = ["pixel", "3d", "abstract", "realistic", "surreal"];
-
-    ids.forEach((id, index) => {
-      const category =
-        categories[Math.floor(Math.random() * categories.length)];
-      const style = styles[Math.floor(Math.random() * styles.length)];
-      const tags = [`favorite`, `nft`, `${category}`, `${style}`];
-
-      dummyItems.push({
-        uuid: id,
-        name: `Favorite NFT #${index + 1}`,
-        description: `Your favorite NFT with ${category} category and ${style} style.`,
-        categories: [category],
-        styles: [style],
-        tags: tags,
-        creator: "Unknown Artist",
-        image_url: `https://api.dicebear.com/6.x/shapes/svg?seed=${id}`,
-        category: category,
-        currency: "ETH",
-        price: 0.1 + Math.random() * 2,
-      });
-    });
-
-    return dummyItems;
-  };
+  }, [apiStats, userPrefs.clickedItems.length]);
 
   // Set personalized items when recommendations are loaded
   useEffect(() => {

@@ -39,7 +39,9 @@ export default function StatisticsPage() {
     total_items: 0,
     total_favorites: 0,
     total_clicks: 0,
+    total_views: 0,
     users_with_preferences: 0,
+    total_interactions: 0,
   });
 
   // Fetch global stats for the dashboard
@@ -93,7 +95,9 @@ export default function StatisticsPage() {
         total_items: apiStats.active_items || 0,
         total_favorites: apiStats.feedback?.total_favorites || 0,
         total_clicks: apiStats.feedback?.total_clicks || 0,
+        total_views: apiStats.feedback?.total_views || 0,
         users_with_preferences: apiStats.feedback?.users_with_preferences || 0,
+        total_interactions: apiStats.feedback?.total_interactions || 0,
       });
     }
   }, [apiStats]);
@@ -146,9 +150,7 @@ export default function StatisticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {isLoadingStats
-                  ? "..."
-                  : (stats.total_clicks || 0) + (stats.total_favorites || 0)}
+                {isLoadingStats ? "..." : stats.total_interactions || 0}
               </div>
             </CardContent>
           </Card>
@@ -191,7 +193,11 @@ export default function StatisticsPage() {
                 <CardContent>
                   <dl className="space-y-2">
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Views/Clicks:</dt>
+                      <dt className="text-muted-foreground">Views:</dt>
+                      <dd className="font-medium">{stats.total_views || 0}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Clicks:</dt>
                       <dd className="font-medium">{stats.total_clicks || 0}</dd>
                     </div>
                     <div className="flex justify-between">

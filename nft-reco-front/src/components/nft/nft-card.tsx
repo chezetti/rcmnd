@@ -3,40 +3,38 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { NFTItem } from "@/lib/store";
 import apiService from "@/lib/api";
 import useStore from "@/lib/store";
-import { Heart } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface NFTCardProps {
   nft: NFTItem;
 }
 
 export default function NFTCard({ nft }: NFTCardProps) {
-  const { userPrefs, recordClick, toggleFavorite } = useStore();
+  const { userPrefs } = useStore();
   const [imageError, setImageError] = useState(false);
-
-  // Check if the item is in the favorites list
-  const isFavorite = userPrefs.favoritedItems.includes(nft.uuid);
+  const [isLiked, setIsLiked] = useState<boolean>(nft.is_favorite || false);
+  const { toast } = useToast();
 
   // Placeholder image for NFTs
   // In a real implementation, you'd fetch the image from your API
   const imageUrl = `https://picsum.photos/seed/${nft.uuid}/512/768`;
 
   const handleClick = async () => {
-    // Record click in frontend store
-    recordClick(nft.uuid);
-
     // Submit click feedback to the API
     try {
       await apiService.submitFeedback({
         item_uuid: nft.uuid,
         user_id: userPrefs.userId,
         feedback_type: "click",
-        value: 1.0, // Explicit value for clarity
+        value: 1.0,
       });
       console.log(`Successfully recorded click for ${nft.uuid}`);
     } catch (error) {
@@ -45,20 +43,25 @@ export default function NFTCard({ nft }: NFTCardProps) {
   };
 
   const handleLike = async () => {
-    // Toggle favorite in the store
-    toggleFavorite(nft.uuid);
+    if (!userPrefs.userId) {
+      toast({
+        title: "Authorization required",
+        description: "Please log in to add NFT to favorites",
+        variant: "destructive",
+      });
 
-    // Will be true after toggling if item was just added to favorites
-    const isNowFavorite = !isFavorite;
+      return;
+    }
 
-    // Submit like/unlike feedback to the API
     try {
       await apiService.submitFeedback({
         item_uuid: nft.uuid,
         user_id: userPrefs.userId,
         feedback_type: "favorite",
-        value: isNowFavorite ? 1 : 0,
+        value: isLiked ? 0 : 1,
       });
+      // Update local state after successful API call
+      setIsLiked(!isLiked);
     } catch (error) {
       console.error("Failed to submit like feedback", error);
     }
@@ -122,7 +125,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
             {/* Иконка избранного выровнена с заголовком */}
             <button
               className={`transition-colors ${
-                isFavorite
+                isLiked
                   ? "text-red-500"
                   : "text-muted-foreground hover:text-red-500"
               }`}
@@ -130,7 +133,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
             >
               <Heart
                 className="h-5 w-5"
-                fill={isFavorite ? "currentColor" : "none"}
+                fill={isLiked ? "currentColor" : "none"}
               />
             </button>
           </div>

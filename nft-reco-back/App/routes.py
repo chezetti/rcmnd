@@ -368,6 +368,16 @@ async def recommend(
             if "content_hash" in hit:
                 del hit["content_hash"]
         
+        # Добавляем поле is_favorite для каждого результата после удаления служебных полей
+        feedback_data = vector_store.feedback.feedback_data
+        for hit in results:
+            if current_user and current_user.id:
+                hit["is_favorite"] = check_if_favorite(hit["uuid"], current_user.id, feedback_data)
+            elif user_id:
+                hit["is_favorite"] = check_if_favorite(hit["uuid"], user_id, feedback_data)
+            else:
+                hit["is_favorite"] = False
+        
         return {"results": results}
     
     except Exception as exc:
@@ -836,26 +846,6 @@ async def stats(current_user: Optional[UserResponse] = Depends(get_current_user_
                 views_count += 1
                 interaction_items.add(item_uuid)
         
-        # Общее количество взаимодействий - считаем все уникальные взаимодействия между пользователем и элементами
-        # Удаляем этот дублирующий код, так как interaction_items уже инициализировано выше
-        # interaction_items = set()
-        
-        # Добавляем элементы с кликами - Эта секция дублирует код выше, поэтому удаляем
-        # for item_uuid, items in clicks_data.items():
-        #    if not vector_store.metadata.get(item_uuid, {}).get("deleted", False):
-        #        if isinstance(items, dict) and user_id in items:
-        #            interaction_items.add(item_uuid)
-        #        elif isinstance(items, list) and any(record.get("user_id") == user_id for record in items):
-        #            interaction_items.add(item_uuid)
-        
-        # Добавляем элементы с просмотрами - Эта секция дублирует код выше, поэтому удаляем
-        # for item_uuid, items in views_data.items():
-        #    if not vector_store.metadata.get(item_uuid, {}).get("deleted", False):
-        #        if isinstance(items, dict) and user_id in items:
-        #            interaction_items.add(item_uuid)
-        #        elif isinstance(items, list) and any(record.get("user_id") == user_id for record in items):
-        #            interaction_items.add(item_uuid)
-        
         # Добавляем избранные элементы
         interaction_items.update(user_favorites)
         
@@ -951,7 +941,9 @@ async def trending_nfts(
                 item_data['uuid'] = uuid
                 
                 # Расчет показателя популярности
-                clicks = vector_store.feedback.feedback_data["clicks"].get(uuid, 0)
+                click_data = vector_store.feedback.feedback_data["clicks"].get(uuid, {})
+                clicks = click_data.get("_total", 0) if isinstance(click_data, dict) else (click_data if isinstance(click_data, int) else 0)
+                
                 favorites = vector_store.feedback.feedback_data["favorites"].get(uuid, 0)
                 
                 # Формула популярности: клики + избранное*3 (избранное имеет больший вес)
@@ -1273,7 +1265,7 @@ def check_if_favorite(item_uuid: str, user_id: str, feedback_data: dict) -> bool
     """
     # Проверяем в user_preferences
     user_preferences = feedback_data.get("user_preferences", {}).get(user_id, {})
-    if item_uuid in user_preferences and user_preferences[item_uuid] > 0:
+    if item_uuid in user_preferences and user_preferences[item_uuid] >= 0.5:
         return True
     
     # Проверяем в favorites_users
@@ -1333,7 +1325,7 @@ async def get_recommendations(
                     
                     # Проверяем через user_preferences
                     user_preferences = feedback_data.get("user_preferences", {}).get(user_id, {})
-                    if item_uuid in user_preferences and user_preferences[item_uuid] > 0:
+                    if item_uuid in user_preferences and user_preferences[item_uuid] >= 0.5:
                         is_favorite = True
                     
                     # Проверяем через favorites_users
@@ -1365,7 +1357,7 @@ async def get_recommendations(
                     
                     # Проверяем через user_preferences
                     user_preferences = feedback_data.get("user_preferences", {}).get(user_id, {})
-                    if item_uuid in user_preferences and user_preferences[item_uuid] > 0:
+                    if item_uuid in user_preferences and user_preferences[item_uuid] >= 0.5:
                         is_favorite = True
                     
                     # Проверяем через favorites_users

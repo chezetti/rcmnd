@@ -78,7 +78,13 @@ export default function SearchPage() {
       setSearchMode("textual");
       setBalanceValue([100]);
     }
-  }, [queryParam, isInitialSearch, userPrefs.diversify, userPrefs.userId]);
+  }, [
+    queryParam,
+    isInitialSearch,
+    userPrefs.diversify,
+    userPrefs.userId,
+    searchMutation,
+  ]);
 
   // Map balance value to search mode
   const getSearchModeFromBalance = (
